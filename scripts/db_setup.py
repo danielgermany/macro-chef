@@ -354,6 +354,72 @@ def create_tables(conn):
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_name ON food_nutrition_cache(food_name);")
 
+    # Phase 2 Enhancement Tables
+
+    # 11. weekly_meal_plans
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weekly_meal_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+
+            week_start_date DATE NOT NULL,
+            week_end_date DATE NOT NULL,
+
+            plan_name TEXT,
+
+            total_cost_estimate_usd REAL,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES user_profile(id)
+        );
+    """)
+
+    # 12. weekly_meal_plan_items
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weekly_meal_plan_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id INTEGER NOT NULL,
+
+            day_of_week TEXT CHECK(day_of_week IN ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')),
+            meal_time TEXT CHECK(meal_time IN ('breakfast', 'lunch', 'dinner', 'snack')),
+
+            meal_template_id INTEGER NOT NULL,
+            servings INTEGER DEFAULT 1,
+
+            notes TEXT,
+
+            FOREIGN KEY (plan_id) REFERENCES weekly_meal_plans(id) ON DELETE CASCADE,
+            FOREIGN KEY (meal_template_id) REFERENCES meal_templates(id)
+        );
+    """)
+
+    # 13. micronutrient_deficiency_alerts
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS micronutrient_deficiency_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+
+            date_detected DATE NOT NULL,
+            nutrient_name TEXT NOT NULL,
+
+            target_amount REAL NOT NULL,
+            avg_actual_amount REAL NOT NULL,
+            percent_of_target REAL NOT NULL,
+
+            severity TEXT CHECK(severity IN ('low', 'moderate', 'severe')),
+            days_consecutive INTEGER DEFAULT 1,
+
+            recommendation TEXT,
+            food_suggestions TEXT,
+
+            acknowledged BOOLEAN DEFAULT 0,
+            resolved_date DATE,
+
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES user_profile(id)
+        );
+    """)
+
     conn.commit()
     print("[SUCCESS] All tables created successfully!")
 
