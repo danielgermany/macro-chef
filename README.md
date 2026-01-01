@@ -6,19 +6,22 @@ An intelligent meal planning system that helps you maintain nutrition goals, min
 
 ### Core Functionality
 - **Smart Nutrition Tracking**: Automatically calculate daily macro and micronutrient targets based on your body metrics and goals (bulk/cut/maintain/recomp)
-- **Intelligent Meal Recommendations**: AI-powered suggestions based on remaining macros, inventory, budget, preferences, and meal history
+- **Intelligent Meal Recommendations**: AI-powered suggestions based on remaining macros, inventory, budget, preferences, and meal history with automatic online recipe search fallback
 - **Meal Logging & Progress**: Track meals throughout the day with real-time progress vs targets
 - **Inventory Management**: Track food on hand with expiration alerts and location-based organization
 - **Budget Tracking**: Monitor grocery spending with weekly/monthly summaries, trends, and category breakdowns
 - **Body Composition Tracking**: Log weight, body fat %, and measurements with progress analysis
 
 ### Advanced Features
+- **Online Recipe Search**: Automatically searches Spoonacular when local database has <5 meals, with price cross-referencing and nutrition validation
+- **Price Cross-Referencing**: Hybrid pricing using 70% shopping history + 30% API for realistic cost estimates
+- **Nutrition Validation**: Cross-validates online recipes with USDA database, flags discrepancies >10%
+- **Selective Recipe Caching**: Auto-saves online recipes to database when rated ≥3 stars
 - **Weekly Meal Planning**: Generate complete 7-day meal plans with automatic recommendations and cost estimates
 - **Shopping List Generation**: Smart shopping lists that check inventory and aggregate ingredients
 - **Micronutrient Analysis**: Detect deficiencies in 9 key micronutrients with food recommendations
 - **Analytics & Insights**: Comprehensive progress reports, adherence tracking, and spending analysis
 - **Recipe Library**: Store and rate recipes with complete nutrition data and ingredient lists
-- **API Integration**: Fetch nutrition data and recipes from Spoonacular and USDA databases
 
 ## Tech Stack
 
@@ -63,7 +66,12 @@ python scripts/db_setup.py
 
 # Create your user profile (interactive)
 python scripts/user_profile.py --create
+
+# If upgrading from a previous version, run migration:
+python scripts/migrate_add_online_recipe_support.py
 ```
+
+**Note**: See [ONLINE_RECIPE_FEATURE.md](ONLINE_RECIPE_FEATURE.md) for details on the online recipe search feature with price cross-referencing and nutrition validation.
 
 ## Usage
 
@@ -360,6 +368,13 @@ macro-chef/
 - [x] Micronutrient deficiency detection (9 nutrients)
 - [x] Analytics and progress reports
 - [x] Main CLI orchestrator
+
+### ✅ Phase 4: Online Recipe Integration (Complete)
+- [x] Intelligent online recipe search fallback (<5 local meals)
+- [x] Price cross-referencing with shopping history (hybrid pricing)
+- [x] USDA nutrition validation with discrepancy flagging
+- [x] Selective recipe caching on user rating (≥3 stars)
+- [x] Comprehensive error handling and graceful degradation
 
 ### 🎯 Future Enhancements
 - [ ] Batch cooking optimization

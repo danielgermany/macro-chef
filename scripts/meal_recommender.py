@@ -14,6 +14,8 @@ from scripts.db_manager import DatabaseManager
 from scripts.meal_tracker import MealTracker
 from scripts.inventory_manager import InventoryManager
 from scripts.user_profile import UserProfileManager
+from scripts.spoonacular_api import SpoonacularAPI
+from scripts.usda_api import USDAAPI
 from config.config import DEFAULT_USER_ID
 
 
@@ -25,6 +27,8 @@ class MealRecommender(DatabaseManager):
         self.meal_tracker = MealTracker()
         self.inventory_manager = InventoryManager()
         self.user_manager = UserProfileManager()
+        self.spoonacular_api = SpoonacularAPI()
+        self.usda_api = USDAAPI()
 
     def recommend_meal(
         self,
@@ -33,10 +37,12 @@ class MealRecommender(DatabaseManager):
         target_date: date = None,
         max_time: Optional[int] = None,
         use_inventory: bool = True,
-        budget_limit: Optional[float] = None
+        budget_limit: Optional[float] = None,
+        allow_online_search: bool = True
     ) -> List[Dict]:
         """
         Recommend meals based on current progress and constraints.
+        Falls back to online search if local database has <5 suitable meals.
 
         Args:
             meal_time: Meal type (breakfast, lunch, dinner, snack)
@@ -45,6 +51,7 @@ class MealRecommender(DatabaseManager):
             max_time: Maximum cooking time in minutes
             use_inventory: Consider inventory when recommending
             budget_limit: Maximum cost per meal
+            allow_online_search: Allow fallback to Spoonacular API (default: True)
         """
 
         if not target_date:
@@ -78,6 +85,32 @@ class MealRecommender(DatabaseManager):
 
         # Get candidate meals from database
         candidates = self._get_candidate_meals(user_id, criteria)
+        print(f"[INFO] Found {len(candidates)} local meal candidates")
+
+        # FALLBACK LOGIC - Search online if insufficient local results
+        if len(candidates) < 5 and allow_online_search:
+            print(f"[INFO] Triggering online search (threshold: 5, found: {len(candidates)})")
+
+            # Add user_id to criteria for online search
+            criteria['user_id'] = user_id
+
+            try:
+                online_recipes = self._search_online_recipes(criteria, max_results=10)
+
+                if online_recipes:
+                    candidates.extend(online_recipes)
+                    print(f"[SUCCESS] Added {len(online_recipes)} online recipes")
+                else:
+                    print("[INFO] No online recipes available, using local results only")
+
+            except Exception as e:
+                print(f"[ERROR] Online search failed: {e}")
+                print("[INFO] Falling back to local results only")
+
+        # Check if we have any candidates at all
+        if not candidates:
+            print("[WARNING] No suitable meals found (local or online)")
+            return []
 
         # Score and rank candidates
         scored_candidates = []
@@ -132,6 +165,480 @@ class MealRecommender(DatabaseManager):
         query += " ORDER BY rating DESC NULLS LAST, last_made ASC NULLS FIRST"
 
         return self.execute_query(query, tuple(params))
+
+    def _search_online_recipes(
+        self,
+        criteria: Dict,
+        max_results: int = 10
+    ) -> List[Dict]:
+        """
+        Search Spoonacular API for recipes matching criteria.
+        Returns standardized meal dictionaries with metadata.
+        """
+
+        # Check API key availability
+        if not self.spoonacular_api.api_key:
+            print("[WARNING] Spoonacular API key not configured")
+            return []
+
+        try:
+            # Build search query from criteria
+            query = self._build_search_query(criteria)
+            diet = self._map_dietary_restrictions(criteria.get('dietary_restrictions', []))
+            intolerances = self._map_intolerances(criteria.get('dietary_restrictions', []))
+
+            # Search API
+            print(f"[INFO] Searching Spoonacular for '{query}' recipes...")
+            api_results = self.spoonacular_api.search_recipes(
+                query=query,
+                max_results=max_results,
+                diet=diet,
+                intolerances=intolerances,
+                max_ready_time=criteria.get('max_time'),
+                min_protein=int(criteria.get('min_protein', 0)),
+                max_calories=int(criteria.get('max_calories', 99999))
+            )
+
+            if not api_results:
+                print("[INFO] No online recipes found")
+                return []
+
+            # Parse each result into meal template format
+            parsed_meals = []
+            failed_count = 0
+
+            for api_recipe in api_results:
+                try:
+                    # Get full recipe details (includes full nutrition)
+                    recipe_details = self.spoonacular_api.get_recipe_information(api_recipe['id'])
+
+                    if not recipe_details:
+                        failed_count += 1
+                        continue
+
+                    # Convert to meal template format
+                    meal = self.spoonacular_api.parse_recipe_to_template(
+                        recipe_details,
+                        user_id=criteria.get('user_id', DEFAULT_USER_ID)
+                    )
+
+                    # Cross-reference price with shopping history
+                    user_id = criteria.get('user_id', DEFAULT_USER_ID)
+                    price_estimate = self._estimate_recipe_cost(meal, user_id)
+
+                    # Update meal cost with hybrid estimate
+                    meal['cost_estimate_usd'] = price_estimate['estimated_price']
+
+                    # Validate nutrition with USDA
+                    ingredients_list = []
+                    if 'extendedIngredients' in recipe_details:
+                        for ing in recipe_details['extendedIngredients']:
+                            ingredients_list.append({
+                                'name': ing.get('name', ''),
+                                'amount': ing.get('amount', 0),
+                                'unit': ing.get('unit', 'g')
+                            })
+
+                    validation_report = self._validate_nutrition(meal, ingredients_list)
+
+                    # Add online recipe metadata
+                    meal['api_source'] = 'spoonacular'
+                    meal['api_recipe_id'] = str(api_recipe['id'])
+                    meal['nutrition_validated'] = validation_report['validation_passed']
+                    meal['validation_confidence'] = validation_report['validation_confidence']
+                    meal['nutrition_flags'] = validation_report.get('flags', [])
+                    meal['price_confidence'] = price_estimate['confidence_score']
+                    meal['price_source'] = price_estimate['price_source']
+                    meal['is_online_recipe'] = True  # Flag for scoring
+
+                    parsed_meals.append(meal)
+
+                except Exception as e:
+                    print(f"[WARNING] Failed to parse recipe {api_recipe.get('id')}: {e}")
+                    failed_count += 1
+                    continue
+
+            if failed_count > 0:
+                print(f"[WARNING] {failed_count}/{len(api_results)} recipes failed to parse")
+
+            print(f"[SUCCESS] Parsed {len(parsed_meals)} online recipes")
+            return parsed_meals
+
+        except Exception as e:
+            print(f"[ERROR] Online recipe search failed: {e}")
+            return []  # Graceful degradation
+
+    def _build_search_query(self, criteria: Dict) -> str:
+        """Build search query string from meal criteria."""
+        meal_time = criteria.get('meal_time', 'dinner')
+
+        # Map meal_time to search terms
+        query_map = {
+            'breakfast': 'breakfast',
+            'lunch': 'lunch main dish',
+            'dinner': 'dinner main course',
+            'snack': 'snack'
+        }
+
+        return query_map.get(meal_time, meal_time)
+
+    def _map_dietary_restrictions(self, restrictions: List[str]) -> Optional[str]:
+        """Map user dietary restrictions to Spoonacular diet parameter."""
+        if not restrictions:
+            return None
+
+        # Spoonacular supported diets
+        diet_map = {
+            'vegetarian': 'vegetarian',
+            'vegan': 'vegan',
+            'pescatarian': 'pescatarian',
+            'paleo': 'paleo',
+            'ketogenic': 'ketogenic',
+            'keto': 'ketogenic',
+            'gluten-free': 'gluten free'
+        }
+
+        # Return first matching diet
+        for restriction in restrictions:
+            if restriction.lower() in diet_map:
+                return diet_map[restriction.lower()]
+
+        return None
+
+    def _map_intolerances(self, restrictions: List[str]) -> Optional[List[str]]:
+        """Map dietary restrictions to Spoonacular intolerances."""
+        if not restrictions:
+            return None
+
+        intolerance_map = {
+            'dairy-free': 'dairy',
+            'lactose-free': 'dairy',
+            'gluten-free': 'gluten',
+            'nut-free': 'tree nut',
+            'soy-free': 'soy',
+            'egg-free': 'egg'
+        }
+
+        intolerances = []
+        for restriction in restrictions:
+            if restriction.lower() in intolerance_map:
+                intolerances.append(intolerance_map[restriction.lower()])
+
+        return intolerances if intolerances else None
+
+    def _estimate_recipe_cost(self, recipe: Dict, user_id: int) -> Dict:
+        """
+        Cross-reference recipe cost with shopping history.
+
+        Returns price estimate with confidence score based on how many
+        ingredients we have shopping history for.
+        """
+        api_price = recipe.get('cost_estimate_usd', 0)
+
+        # Get ingredients from recipe data
+        ingredients = recipe.get('ingredients', [])
+        if not ingredients:
+            # No ingredients to cross-reference
+            return {
+                'estimated_price': api_price,
+                'api_price': api_price,
+                'price_difference': 0,
+                'confidence_score': 0.3,  # Low confidence, API only
+                'price_source': 'spoonacular',
+                'ingredients_matched': 0,
+                'ingredients_total': 0
+            }
+
+        total_ingredients = len(ingredients)
+        matched_ingredients = 0
+        shopping_history_total = 0
+
+        try:
+            # Query shopping history for last 90 days
+            query = """
+                SELECT item_name, quantity, unit, total_price_usd, purchase_date
+                FROM shopping_history
+                WHERE user_id = ?
+                AND purchase_date >= DATE('now', '-90 days')
+                ORDER BY purchase_date DESC
+            """
+            shopping_items = self.execute_query(query, (user_id,))
+
+            if not shopping_items:
+                # No shopping history available
+                return {
+                    'estimated_price': api_price,
+                    'api_price': api_price,
+                    'price_difference': 0,
+                    'confidence_score': 0.3,
+                    'price_source': 'spoonacular',
+                    'ingredients_matched': 0,
+                    'ingredients_total': total_ingredients
+                }
+
+            # Build lookup dictionary for faster matching
+            shopping_dict = {}
+            for item in shopping_items:
+                item_name = item['item_name']
+                qty = item['quantity']
+                unit = item['unit']
+                price = item['total_price_usd']
+                date = item['purchase_date']
+                key = item_name.lower()
+                if key not in shopping_dict:
+                    shopping_dict[key] = {
+                        'quantity': qty,
+                        'unit': unit,
+                        'price': price,
+                        'date': date
+                    }
+
+            # Match ingredients with shopping history
+            for ingredient in ingredients:
+                ingredient_name = ingredient.get('name', '').lower()
+                ingredient_qty = ingredient.get('amount', 0)
+
+                # Try exact match first
+                matched = False
+                if ingredient_name in shopping_dict:
+                    matched = True
+                else:
+                    # Try fuzzy matching (contains)
+                    for shop_item_name in shopping_dict.keys():
+                        if ingredient_name in shop_item_name or shop_item_name in ingredient_name:
+                            # Found a match
+                            matched = True
+                            ingredient_name = shop_item_name
+                            break
+
+                if matched:
+                    matched_ingredients += 1
+                    shop_data = shopping_dict[ingredient_name]
+
+                    # Calculate unit price
+                    unit_price = shop_data['price'] / shop_data['quantity'] if shop_data['quantity'] > 0 else 0
+
+                    # Estimate cost for this ingredient
+                    # (simplified: assumes same units, more sophisticated conversion possible)
+                    ingredient_cost = unit_price * ingredient_qty
+                    shopping_history_total += ingredient_cost
+
+            # Calculate confidence score
+            confidence_score = matched_ingredients / total_ingredients if total_ingredients > 0 else 0
+
+            # Determine final price and source
+            if confidence_score > 0:
+                # Hybrid approach: 70% shopping history + 30% API
+                # Scale shopping history total to full recipe (proportionally)
+                if matched_ingredients > 0:
+                    shopping_estimate = shopping_history_total * (total_ingredients / matched_ingredients)
+                else:
+                    shopping_estimate = 0
+
+                estimated_price = (0.7 * shopping_estimate) + (0.3 * api_price)
+                price_source = 'hybrid'
+            else:
+                estimated_price = api_price
+                price_source = 'spoonacular'
+
+            price_difference = abs(estimated_price - api_price)
+
+            return {
+                'estimated_price': round(estimated_price, 2),
+                'api_price': api_price,
+                'price_difference': round(price_difference, 2),
+                'confidence_score': round(confidence_score, 2),
+                'price_source': price_source,
+                'ingredients_matched': matched_ingredients,
+                'ingredients_total': total_ingredients
+            }
+
+        except Exception as e:
+            print(f"[WARNING] Price estimation failed: {e}")
+            # Fallback to API price
+            return {
+                'estimated_price': api_price,
+                'api_price': api_price,
+                'price_difference': 0,
+                'confidence_score': 0.3,
+                'price_source': 'spoonacular',
+                'ingredients_matched': 0,
+                'ingredients_total': total_ingredients
+            }
+
+    def _convert_to_grams(self, quantity: float, unit: str) -> float:
+        """
+        Convert quantity from various units to grams.
+
+        Used for nutrition validation with USDA (which reports per 100g).
+        """
+        unit = unit.lower().strip()
+
+        # Volume to weight conversions (approximate, varies by ingredient)
+        conversion_map = {
+            'g': 1.0,
+            'gram': 1.0,
+            'grams': 1.0,
+            'kg': 1000.0,
+            'kilogram': 1000.0,
+            'kilograms': 1000.0,
+            'oz': 28.35,
+            'ounce': 28.35,
+            'ounces': 28.35,
+            'lb': 453.59,
+            'lbs': 453.59,
+            'pound': 453.59,
+            'pounds': 453.59,
+
+            # Volume (approximate - assumes water density)
+            'ml': 1.0,
+            'milliliter': 1.0,
+            'milliliters': 1.0,
+            'l': 1000.0,
+            'liter': 1000.0,
+            'liters': 1000.0,
+            'cup': 240.0,
+            'cups': 240.0,
+            'tbsp': 15.0,
+            'tablespoon': 15.0,
+            'tablespoons': 15.0,
+            'tsp': 5.0,
+            'teaspoon': 5.0,
+            'teaspoons': 5.0,
+            'fl oz': 30.0,
+            'fluid ounce': 30.0,
+            'fluid ounces': 30.0,
+
+            # Common serving sizes (approximations)
+            'serving': 100.0,
+            'servings': 100.0,
+            'piece': 50.0,
+            'pieces': 50.0,
+            'slice': 30.0,
+            'slices': 30.0,
+        }
+
+        multiplier = conversion_map.get(unit, 100.0)  # Default 100g if unknown
+        return quantity * multiplier
+
+    def _validate_nutrition(self, recipe: Dict, ingredients_list: List[Dict]) -> Dict:
+        """
+        Cross-validate Spoonacular nutrition with USDA data.
+
+        Compares ingredient-level USDA nutrition totals with recipe-level
+        Spoonacular nutrition. Flags discrepancies >10%.
+        """
+        if not ingredients_list:
+            return {
+                'validation_passed': False,
+                'validation_confidence': 0.0,
+                'discrepancies': {},
+                'flags': ['No ingredients to validate'],
+                'ingredients_validated': 0,
+                'ingredients_total': 0
+            }
+
+        # Get recipe nutrition from Spoonacular
+        recipe_nutrition = {
+            'calories': recipe.get('calories', 0),
+            'protein_g': recipe.get('protein_g', 0),
+            'carbs_g': recipe.get('carbs_g', 0),
+            'fat_g': recipe.get('fat_g', 0)
+        }
+
+        # Accumulate USDA nutrition totals
+        usda_totals = {
+            'calories': 0,
+            'protein_g': 0,
+            'carbs_g': 0,
+            'fat_g': 0
+        }
+
+        ingredients_validated = 0
+        total_ingredients = len(ingredients_list)
+
+        try:
+            for ingredient in ingredients_list:
+                ingredient_name = ingredient.get('name', '')
+                quantity = ingredient.get('amount', 0)
+                unit = ingredient.get('unit', 'g')
+
+                if not ingredient_name or quantity == 0:
+                    continue
+
+                try:
+                    # Get USDA nutrition (per 100g)
+                    usda_data = self.usda_api.get_nutrition_from_search(ingredient_name)
+
+                    if not usda_data:
+                        continue
+
+                    # Convert ingredient quantity to grams
+                    grams = self._convert_to_grams(quantity, unit)
+
+                    # Scale USDA nutrition (from per 100g to actual quantity)
+                    scale_factor = grams / 100.0
+
+                    usda_totals['calories'] += usda_data.get('calories', 0) * scale_factor
+                    usda_totals['protein_g'] += usda_data.get('protein_g', 0) * scale_factor
+                    usda_totals['carbs_g'] += usda_data.get('carbs_g', 0) * scale_factor
+                    usda_totals['fat_g'] += usda_data.get('fat_g', 0) * scale_factor
+
+                    ingredients_validated += 1
+
+                except Exception as e:
+                    print(f"[WARNING] Failed to validate ingredient '{ingredient_name}': {e}")
+                    continue
+
+            # Calculate confidence based on validated ingredients
+            validation_confidence = ingredients_validated / total_ingredients if total_ingredients > 0 else 0
+
+            # Compare USDA totals with Spoonacular recipe nutrition
+            discrepancies = {}
+            flags = []
+            validation_passed = True
+
+            for nutrient in ['calories', 'protein_g', 'carbs_g', 'fat_g']:
+                usda_value = usda_totals[nutrient]
+                spoon_value = recipe_nutrition[nutrient]
+
+                if spoon_value > 0:
+                    percent_diff = abs(usda_value - spoon_value) / spoon_value
+
+                    discrepancies[nutrient] = {
+                        'usda_value': round(usda_value, 1),
+                        'spoonacular_value': round(spoon_value, 1),
+                        'percent_difference': round(percent_diff * 100, 1)
+                    }
+
+                    # Flag if >10% difference
+                    if percent_diff > 0.10:
+                        validation_passed = False
+                        flags.append(f"{nutrient.replace('_', ' ')} differs by {round(percent_diff * 100, 1)}%")
+
+            # If we validated <50% of ingredients, lower confidence
+            if validation_confidence < 0.5:
+                flags.append(f"Only {ingredients_validated}/{total_ingredients} ingredients validated")
+
+            return {
+                'validation_passed': validation_passed and validation_confidence >= 0.5,
+                'validation_confidence': round(validation_confidence, 2),
+                'discrepancies': discrepancies,
+                'flags': flags,
+                'ingredients_validated': ingredients_validated,
+                'ingredients_total': total_ingredients
+            }
+
+        except Exception as e:
+            print(f"[ERROR] Nutrition validation failed: {e}")
+            return {
+                'validation_passed': False,
+                'validation_confidence': 0.0,
+                'discrepancies': {},
+                'flags': [f'Validation error: {str(e)}'],
+                'ingredients_validated': 0,
+                'ingredients_total': total_ingredients
+            }
 
     def _score_meal(
         self,
@@ -201,6 +708,19 @@ class MealRecommender(DatabaseManager):
             inventory_score = self._calculate_inventory_match(meal, user_id)
             score += inventory_score
 
+        # 5. Online recipe adjustment
+        if meal.get('is_online_recipe'):
+            # Slight penalty for untried recipes (no user rating history)
+            score -= 5
+
+            # But bonus if nutrition is validated
+            if meal.get('nutrition_validated'):
+                score += 3
+
+            # Bonus if price confidence is high
+            if meal.get('price_confidence'):
+                score += meal['price_confidence'] * 5  # 0-5 point bonus
+
         return min(score, 100)  # Cap at 100
 
     def _calculate_inventory_match(self, meal: Dict, user_id: int) -> float:
@@ -268,6 +788,16 @@ class MealRecommender(DatabaseManager):
                 reasons.append("Budget-friendly")
             if 'healthy' in tags:
                 reasons.append("Healthy option")
+
+        # Online recipe indicators
+        if meal.get('is_online_recipe'):
+            reasons.append("New recipe from online search")
+
+            if meal.get('nutrition_validated'):
+                reasons.append("Nutrition verified with USDA")
+
+            if meal.get('price_confidence', 0) > 0.7:
+                reasons.append("Price estimated from shopping history")
 
         return reasons
 

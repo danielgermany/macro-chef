@@ -38,9 +38,11 @@ class MealTracker(DatabaseManager):
         notes: Optional[str] = None,
         rating: Optional[int] = None,
         user_id: int = DEFAULT_USER_ID,
-        meal_date: date = None
+        meal_date: date = None,
+        meal_template_id: Optional[int] = None,
+        online_recipe_data: Optional[Dict] = None
     ) -> int:
-        """Log a meal with nutrition data."""
+        """Log a meal with nutrition data. Optionally saves online recipes if rated ≥3."""
 
         if not meal_date:
             meal_date = date.today()
@@ -72,6 +74,11 @@ class MealTracker(DatabaseManager):
 
         meal_id = self.execute_write(query, params)
         print(f"[SUCCESS] Meal logged: {meal_name} ({calories} kcal, {protein_g}g protein)")
+
+        # Save online recipe to database if rated ≥3 stars
+        if rating and rating >= 3 and online_recipe_data:
+            self._save_online_recipe_to_templates(online_recipe_data, user_id, rating)
+
         return meal_id
 
     def get_daily_progress(
@@ -255,6 +262,126 @@ class MealTracker(DatabaseManager):
         self.execute_write(query, (rating, meal_id))
         print(f"[SUCCESS] Meal rating updated to {rating}")
         return True
+
+    def _save_online_recipe_to_templates(
+        self,
+        online_recipe_data: Dict,
+        user_id: int,
+        rating: int
+    ) -> None:
+        """
+        Save a rated online recipe to the meal_templates table.
+
+        Only called when user rates an online recipe ≥3 stars.
+        Prevents duplicates by checking api_recipe_id.
+        """
+        api_recipe_id = online_recipe_data.get('api_recipe_id')
+
+        if not api_recipe_id:
+            print("[WARNING] Cannot save recipe: missing api_recipe_id")
+            return
+
+        # Check if recipe already exists
+        check_query = "SELECT id FROM meal_templates WHERE api_recipe_id = ?"
+        existing = self.execute_single(check_query, (api_recipe_id,))
+
+        if existing:
+            print(f"[INFO] Recipe already saved (template_id: {existing['id']})")
+            return
+
+        # Insert into meal_templates
+        insert_query = """
+            INSERT INTO meal_templates (
+                user_id, name, meal_type, calories, protein_g, carbs_g, fat_g,
+                fiber_g, sugar_g, saturated_fat_g, sodium_mg, cholesterol_mg,
+                prep_time_minutes, cook_time_minutes, servings,
+                difficulty, tags, cost_estimate_usd,
+                recipe_instructions, recipe_source,
+                api_source, api_recipe_id, nutrition_validated,
+                price_confidence, price_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
+        # Map difficulty levels
+        difficulty_map = {
+            'easy': 'easy',
+            'beginner': 'easy',
+            'intermediate': 'medium',
+            'medium': 'medium',
+            'advanced': 'hard',
+            'hard': 'hard'
+        }
+        difficulty = difficulty_map.get(online_recipe_data.get('difficulty', 'medium').lower(), 'medium')
+
+        params = (
+            user_id,
+            online_recipe_data.get('meal_name', 'Unknown Recipe'),
+            online_recipe_data.get('meal_time', 'dinner'),
+            online_recipe_data.get('calories', 0),
+            online_recipe_data.get('protein_g', 0),
+            online_recipe_data.get('carbs_g', 0),
+            online_recipe_data.get('fat_g', 0),
+            online_recipe_data.get('fiber_g'),
+            online_recipe_data.get('sugar_g'),
+            online_recipe_data.get('saturated_fat_g'),
+            online_recipe_data.get('sodium_mg'),
+            online_recipe_data.get('cholesterol_mg'),
+            online_recipe_data.get('prep_time_minutes'),
+            online_recipe_data.get('cook_time_minutes'),
+            online_recipe_data.get('servings', 1),
+            difficulty,
+            online_recipe_data.get('tags'),
+            online_recipe_data.get('cost_estimate_usd', 0),
+            online_recipe_data.get('recipe_instructions', 'See source URL'),
+            online_recipe_data.get('recipe_source', online_recipe_data.get('source_url', 'Online')),
+            online_recipe_data.get('api_source', 'spoonacular'),
+            api_recipe_id,
+            online_recipe_data.get('nutrition_validated', False),
+            online_recipe_data.get('price_confidence'),
+            online_recipe_data.get('price_source', 'spoonacular')
+        )
+
+        template_id = self.execute_write(insert_query, params)
+        print(f"[SUCCESS] Saved online recipe to database (template_id: {template_id})")
+
+        # Save ingredients if available
+        ingredients = online_recipe_data.get('ingredients', [])
+        if ingredients:
+            self._save_recipe_ingredients(template_id, ingredients)
+
+    def _save_recipe_ingredients(
+        self,
+        template_id: int,
+        ingredients: List[Dict]
+    ) -> None:
+        """
+        Save ingredients for a recipe template.
+
+        Bulk inserts ingredient list for a saved recipe.
+        """
+        if not ingredients:
+            return
+
+        insert_query = """
+            INSERT INTO meal_ingredients (
+                meal_template_id, ingredient_name, quantity,
+                unit, optional
+            ) VALUES (?, ?, ?, ?, ?)
+        """
+
+        ingredient_params = []
+        for ing in ingredients:
+            ingredient_params.append((
+                template_id,
+                ing.get('name', 'Unknown'),
+                ing.get('amount', 0),
+                ing.get('unit', 'g'),
+                ing.get('is_optional', False)
+            ))
+
+        # Bulk insert
+        self.execute_many(insert_query, ingredient_params)
+        print(f"[SUCCESS] Saved {len(ingredient_params)} ingredients for recipe")
 
 
 # CLI interface

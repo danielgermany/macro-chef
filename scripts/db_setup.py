@@ -234,6 +234,12 @@ def create_tables(conn):
             is_batch_friendly BOOLEAN DEFAULT 0,
             can_freeze BOOLEAN DEFAULT 0,
 
+            api_source TEXT DEFAULT NULL,
+            api_recipe_id TEXT DEFAULT NULL,
+            nutrition_validated BOOLEAN DEFAULT 0,
+            price_confidence REAL DEFAULT NULL,
+            price_source TEXT DEFAULT NULL,
+
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES user_profile(id)
@@ -242,6 +248,8 @@ def create_tables(conn):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_meal_type ON meal_templates(meal_type);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_meal_rating ON meal_templates(rating);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_meal_last_made ON meal_templates(last_made);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_meal_api_source ON meal_templates(api_source);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_meal_api_recipe_id ON meal_templates(api_recipe_id);")
 
     # 7. meal_ingredients
     cursor.execute("""
