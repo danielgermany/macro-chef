@@ -501,7 +501,7 @@ class MacroChefGUI:
 
         try:
             # Get today's targets
-            targets = self.nutrition_calc.get_targets(self.current_user_id, date.today())
+            targets = self.nutrition_calc.get_daily_targets(self.current_user_id, date.today())
 
             self.targets_text.config(state='normal')
             self.targets_text.delete('1.0', tk.END)
@@ -591,7 +591,7 @@ class MacroChefGUI:
 
         try:
             # Get today's targets
-            targets = self.nutrition_calc.get_targets(self.current_user_id, date.today())
+            targets = self.nutrition_calc.get_daily_targets(self.current_user_id, date.today())
 
             if not targets:
                 messagebox.showwarning("Warning", "Please generate targets first (Profile tab)")
@@ -628,7 +628,7 @@ class MacroChefGUI:
                 self.inventory_tree.delete(item)
 
             # Get inventory items
-            items = self.inventory_manager.list_inventory()
+            items = self.inventory_manager.get_all_items()
 
             for item in items:
                 self.inventory_tree.insert('', 'end', values=(

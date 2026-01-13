@@ -358,7 +358,7 @@ class TestMealsButtons:
         mock_gui.current_user_id = 1
 
         # Mock get_targets to return None
-        with patch.object(mock_gui.nutrition_calc, 'get_targets', return_value=None):
+        with patch.object(mock_gui.nutrition_calc, 'get_daily_targets', return_value=None):
             with patch('gui_app.messagebox.showwarning') as mock_warning:
                 mock_gui.get_meal_recommendation()
                 mock_warning.assert_called_once()
@@ -395,7 +395,7 @@ class TestMealsButtons:
             'fat_g': 20
         }
 
-        with patch.object(mock_gui.nutrition_calc, 'get_targets', return_value=mock_targets):
+        with patch.object(mock_gui.nutrition_calc, 'get_daily_targets', return_value=mock_targets):
             with patch.object(mock_gui.meal_recommender, 'recommend_meal', return_value=mock_meal):
                 with patch('gui_app.messagebox.showinfo') as mock_info:
                     mock_gui.get_meal_recommendation()
