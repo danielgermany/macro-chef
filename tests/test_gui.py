@@ -32,18 +32,26 @@ def temp_db():
 
     # Create minimal schema for testing
     cursor.execute("""
-        CREATE TABLE user_profiles (
+        CREATE TABLE user_profile (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+            name TEXT,
             age INTEGER,
             sex TEXT,
-            height_inches INTEGER,
-            weight_lbs REAL,
+            height_inches REAL,
+            weight_lbs REAL NOT NULL,
             body_fat_pct REAL,
+            muscle_mass_lbs REAL,
+            bmr_kcal INTEGER,
             goal_type TEXT,
+            target_weekly_change_lbs REAL,
             activity_level TEXT,
-            training_days_per_week INTEGER,
+            training_days_per_week INTEGER DEFAULT 0,
+            cooking_skill TEXT,
+            cooking_frequency TEXT,
+            dietary_restrictions TEXT,
+            food_dislikes TEXT,
             weekly_budget_usd REAL,
+            available_equipment TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -58,7 +66,7 @@ def temp_db():
             carbs_target_g INTEGER,
             fat_target_g INTEGER,
             fiber_target_g INTEGER,
-            FOREIGN KEY (user_id) REFERENCES user_profiles (id)
+            FOREIGN KEY (user_id) REFERENCES user_profile (id)
         )
     """)
 
@@ -72,7 +80,7 @@ def temp_db():
             protein_g REAL,
             carbs_g REAL,
             fat_g REAL,
-            FOREIGN KEY (user_id) REFERENCES user_profiles (id)
+            FOREIGN KEY (user_id) REFERENCES user_profile (id)
         )
     """)
 
@@ -113,8 +121,8 @@ def mock_gui(gui_root, temp_db, monkeypatch):
     # Mock the database path
     monkeypatch.setattr('gui_app.DATABASE_PATH', temp_db)
 
-    # Create GUI instance
-    app = MacroChefGUI(gui_root)
+    # Create GUI instance with test database
+    app = MacroChefGUI(gui_root, db_path=temp_db)
 
     yield app
 
@@ -147,7 +155,7 @@ class TestProfileButtons:
         # Verify user was created
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user_profiles WHERE name = ?", ("Test User",))
+        cursor.execute("SELECT * FROM user_profile WHERE name = ?", ("Test User",))
         user = cursor.fetchone()
         conn.close()
 
@@ -173,7 +181,7 @@ class TestProfileButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles
+            INSERT INTO user_profile
             (name, age, sex, height_inches, weight_lbs, body_fat_pct, goal_type, activity_level)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, ("Original User", 25, "female", 65, 150, 20.0, "cut", "light"))
@@ -196,7 +204,7 @@ class TestProfileButtons:
         # Verify user was updated
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user_profiles WHERE id = ?", (user_id,))
+        cursor.execute("SELECT * FROM user_profile WHERE id = ?", (user_id,))
         user = cursor.fetchone()
         conn.close()
 
@@ -209,7 +217,7 @@ class TestProfileButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles
+            INSERT INTO user_profile
             (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
              goal_type, activity_level, training_days_per_week, weekly_budget_usd)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -238,7 +246,7 @@ class TestProfileButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles
+            INSERT INTO user_profile
             (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
              goal_type, activity_level)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -279,7 +287,7 @@ class TestDashboardButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name) VALUES (?, ?)
         """, (1, "Test User"))
         cursor.execute("""
             INSERT INTO daily_targets
@@ -350,7 +358,7 @@ class TestMealsButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name) VALUES (?, ?)
         """, (1, "Test User"))
         conn.commit()
         conn.close()
@@ -369,7 +377,7 @@ class TestMealsButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name) VALUES (?, ?)
         """, (1, "Test User"))
         cursor.execute("""
             INSERT INTO daily_targets
@@ -561,7 +569,7 @@ class TestButtonCallbacks:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profiles (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name) VALUES (?, ?)
         """, (1, "Test User"))
         conn.commit()
         conn.close()
@@ -603,7 +611,7 @@ class TestFormValidation:
         # Verify values were saved correctly
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
-        cursor.execute("SELECT age, weight_lbs, body_fat_pct, weekly_budget_usd FROM user_profiles WHERE name = ?", ("Test",))
+        cursor.execute("SELECT age, weight_lbs, body_fat_pct, weekly_budget_usd FROM user_profile WHERE name = ?", ("Test",))
         result = cursor.fetchone()
         conn.close()
 

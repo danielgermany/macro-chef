@@ -27,17 +27,24 @@ from config.config import DATABASE_PATH
 class MacroChefGUI:
     """Main GUI application for Macro Chef."""
 
-    def __init__(self, root):
+    def __init__(self, root, db_path=None):
         self.root = root
         self.root.title("Macro Chef - Meal Planning & Nutrition Tracker")
         self.root.geometry("1000x700")
 
-        # Initialize managers
-        self.user_manager = UserProfileManager()
-        self.nutrition_calc = NutritionCalculator()
-        self.meal_recommender = MealRecommender()
-        self.inventory_manager = InventoryManager()
-        self.db_manager = DatabaseManager()
+        # Initialize managers with optional database path
+        if db_path:
+            self.user_manager = UserProfileManager(db_path=db_path)
+            self.nutrition_calc = NutritionCalculator()  # Uses default path internally
+            self.meal_recommender = MealRecommender()  # Uses default path internally
+            self.inventory_manager = InventoryManager(db_path=db_path)
+            self.db_manager = DatabaseManager(db_path=db_path)
+        else:
+            self.user_manager = UserProfileManager()
+            self.nutrition_calc = NutritionCalculator()
+            self.meal_recommender = MealRecommender()
+            self.inventory_manager = InventoryManager()
+            self.db_manager = DatabaseManager()
 
         # Current user
         self.current_user_id = None
