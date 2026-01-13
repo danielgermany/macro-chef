@@ -28,7 +28,7 @@ An intelligent meal planning system that helps you maintain nutrition goals, min
 - **Database**: SQLite (13 tables)
 - **Backend**: Python 3.8+
 - **APIs**: Spoonacular (recipes/nutrition), USDA FoodData Central (nutrition)
-- **Interface**: Unified CLI with natural language support
+- **Interface**: Unified CLI with natural language support + GUI application (tkinter)
 
 ## Quick Start
 
@@ -75,7 +75,31 @@ python scripts/migrate_add_online_recipe_support.py
 
 ## Usage
 
-### Main Interface (Recommended)
+### GUI Application (Easiest)
+
+Launch the graphical interface for a user-friendly experience:
+
+```bash
+# macOS/Linux
+./launch_gui.sh
+
+# Or directly:
+python3 gui_app.py
+
+# Windows
+launch_gui.bat
+```
+
+The GUI provides:
+- Dashboard with nutrition targets and stats
+- User profile management
+- Meal templates and recommendations
+- Inventory tracking
+- Online recipe search with filters
+
+See [GUI_README.md](GUI_README.md) for detailed GUI documentation.
+
+### CLI Interface (Advanced)
 
 The `claude_interface.py` provides a unified CLI for all features:
 
@@ -349,7 +373,7 @@ macro-chef/
 
 ## Features Roadmap
 
-### ✅ Phase 1: Foundation (Complete)
+###  Phase 1: Foundation (Complete)
 - [x] Project setup and database initialization (13 tables)
 - [x] User profile management with goals
 - [x] BMR/TDEE calculation (Katch-McArdle & Mifflin-St Jeor)
@@ -357,26 +381,26 @@ macro-chef/
 - [x] Meal tracking with progress monitoring
 - [x] Inventory management with expiration alerts
 
-### ✅ Phase 2: Intelligence (Complete)
+###  Phase 2: Intelligence (Complete)
 - [x] Intelligent meal recommendation engine (0-100 scoring)
 - [x] API integration (Spoonacular, USDA) with caching
 - [x] Shopping list generation with inventory checking
 - [x] Budget tracking with trends and category analysis
 
-### ✅ Phase 3: Optimization (Complete)
+###  Phase 3: Optimization (Complete)
 - [x] Weekly meal planning with cost estimation
 - [x] Micronutrient deficiency detection (9 nutrients)
 - [x] Analytics and progress reports
 - [x] Main CLI orchestrator
 
-### ✅ Phase 4: Online Recipe Integration (Complete)
+###  Phase 4: Online Recipe Integration (Complete)
 - [x] Intelligent online recipe search fallback (<5 local meals)
 - [x] Price cross-referencing with shopping history (hybrid pricing)
 - [x] USDA nutrition validation with discrepancy flagging
 - [x] Selective recipe caching on user rating (≥3 stars)
 - [x] Comprehensive error handling and graceful degradation
 
-### 🎯 Future Enhancements
+###  Future Enhancements
 - [ ] Batch cooking optimization
 - [ ] Multi-user household support
 - [ ] Mobile app integration

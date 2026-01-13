@@ -148,7 +148,7 @@ Adds 5 new columns and 2 indexes. Safe to run multiple times (idempotent).
 
 ## Backward Compatibility
 
-✅ Fully backward compatible:
+ Fully backward compatible:
 - New columns are nullable
 - Online search is opt-in (enabled by default, can disable)
 - Existing meal recommendations work unchanged
