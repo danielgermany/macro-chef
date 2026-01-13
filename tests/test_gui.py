@@ -182,9 +182,10 @@ class TestProfileButtons:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO user_profile
-            (name, age, sex, height_inches, weight_lbs, body_fat_pct, goal_type, activity_level)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, ("Original User", 25, "female", 65, 150, 20.0, "cut", "light"))
+            (name, age, sex, height_inches, weight_lbs, body_fat_pct, goal_type, activity_level,
+             dietary_restrictions, food_dislikes, available_equipment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, ("Original User", 25, "female", 65, 150, 20.0, "cut", "light", '[]', '[]', '[]'))
         conn.commit()
         user_id = cursor.lastrowid
         conn.close()
@@ -219,9 +220,10 @@ class TestProfileButtons:
         cursor.execute("""
             INSERT INTO user_profile
             (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
-             goal_type, activity_level, training_days_per_week, weekly_budget_usd)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (1, "Test User", 30, "male", 70, 180, 15.0, "bulk", "moderate", 4, 120.0))
+             goal_type, activity_level, training_days_per_week, weekly_budget_usd,
+             dietary_restrictions, food_dislikes, available_equipment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (1, "Test User", 30, "male", 70, 180, 15.0, "bulk", "moderate", 4, 120.0, '[]', '[]', '[]'))
         conn.commit()
         conn.close()
 
@@ -248,9 +250,9 @@ class TestProfileButtons:
         cursor.execute("""
             INSERT INTO user_profile
             (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
-             goal_type, activity_level)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (1, "Test User", 30, "male", 70, 180, 15.0, "maintain", "moderate"))
+             goal_type, activity_level, dietary_restrictions, food_dislikes, available_equipment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (1, "Test User", 30, "male", 70, 180, 15.0, "maintain", "moderate", '[]', '[]', '[]'))
         conn.commit()
         conn.close()
 
@@ -287,7 +289,7 @@ class TestDashboardButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profile (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
         """, (1, "Test User"))
         cursor.execute("""
             INSERT INTO daily_targets
@@ -358,7 +360,7 @@ class TestMealsButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profile (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
         """, (1, "Test User"))
         conn.commit()
         conn.close()
@@ -377,7 +379,7 @@ class TestMealsButtons:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profile (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
         """, (1, "Test User"))
         cursor.execute("""
             INSERT INTO daily_targets
@@ -569,7 +571,7 @@ class TestButtonCallbacks:
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO user_profile (id, name) VALUES (?, ?)
+            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
         """, (1, "Test User"))
         conn.commit()
         conn.close()
