@@ -136,6 +136,93 @@ class MealRecommender(DatabaseManager):
 
         return recommendations
 
+    def save_recommended_meal(self, meal: Dict, user_id: int) -> Optional[int]:
+        """
+        Save a recommended meal to the database if it's an online recipe.
+        Returns the meal_template_id if saved, or None if already exists or is a database meal.
+        """
+        # If meal already has a database id, it's already saved
+        if 'id' in meal and meal['id']:
+            return meal['id']
+
+        # Only save online recipes
+        api_recipe_id = meal.get('api_recipe_id')
+        if not api_recipe_id:
+            return None  # Not an online recipe or missing ID
+
+        # Check if recipe already exists
+        check_query = "SELECT id FROM meal_templates WHERE api_recipe_id = ?"
+        existing = self.execute_single(check_query, (api_recipe_id,))
+
+        if existing:
+            return existing['id']  # Already exists
+
+        # Map difficulty levels
+        difficulty_map = {
+            'easy': 'easy',
+            'beginner': 'easy',
+            'intermediate': 'medium',
+            'medium': 'medium',
+            'advanced': 'hard',
+            'hard': 'hard'
+        }
+        difficulty = difficulty_map.get(meal.get('difficulty', 'medium').lower(), 'medium')
+
+        # Insert into meal_templates
+        insert_query = """
+            INSERT INTO meal_templates (
+                user_id, name, meal_type, calories, protein_g, carbs_g, fat_g,
+                fiber_g, sugar_g, saturated_fat_g, sodium_mg, cholesterol_mg,
+                prep_time_minutes, cook_time_minutes, total_time_minutes, servings,
+                difficulty, tags, cost_estimate_usd,
+                recipe_instructions, recipe_source, description,
+                api_source, api_recipe_id, nutrition_validated,
+                price_confidence, price_source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
+        params = (
+            user_id,
+            meal.get('name', 'Unknown Recipe'),
+            meal.get('meal_type', 'dinner'),
+            int(meal.get('calories', 0)),
+            meal.get('protein_g', 0),
+            meal.get('carbs_g', 0),
+            meal.get('fat_g', 0),
+            meal.get('fiber_g'),
+            meal.get('sugar_g'),
+            meal.get('saturated_fat_g'),
+            meal.get('sodium_mg'),
+            meal.get('cholesterol_mg'),
+            meal.get('prep_time_minutes'),
+            meal.get('cook_time_minutes'),
+            meal.get('total_time_minutes'),
+            meal.get('servings', 1),
+            difficulty,
+            meal.get('tags'),
+            meal.get('cost_estimate_usd'),
+            meal.get('recipe_instructions', 'See source URL'),
+            meal.get('recipe_source', meal.get('source_url', 'Online')),
+            meal.get('description'),
+            meal.get('api_source', 'spoonacular'),
+            api_recipe_id,
+            meal.get('nutrition_validated', False),
+            meal.get('price_confidence'),
+            meal.get('price_source', 'spoonacular')
+        )
+
+        try:
+            template_id = self.execute_write(insert_query, params)
+            print(f"[SUCCESS] Saved recommended meal to database (template_id: {template_id})")
+            
+            # Update meal dict with new id
+            meal['id'] = template_id
+            
+            return template_id
+        except Exception as e:
+            print(f"[ERROR] Failed to save recommended meal: {e}")
+            return None
+
     def _get_candidate_meals(self, user_id: int, criteria: Dict) -> List[Dict]:
         """Get candidate meals from database based on criteria."""
 

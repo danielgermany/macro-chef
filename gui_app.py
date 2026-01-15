@@ -682,6 +682,17 @@ class MacroChefGUI:
             if recommendations:
                 # Get top recommendation
                 meal = recommendations[0]
+                
+                # Save recommended meal to database if it's an online recipe
+                try:
+                    saved_id = self.meal_recommender.save_recommended_meal(meal, self.current_user_id)
+                    if saved_id:
+                        self.status_bar.config(text=f"Saved meal '{meal['name']}' to database")
+                        self.root.update_idletasks()
+                except Exception as save_error:
+                    print(f"[WARNING] Failed to save recommended meal: {save_error}")
+                    # Continue even if save fails
+                
                 msg = f"Recommended Meal:\n\n"
                 msg += f"Name: {meal['name']}\n"
                 msg += f"Type: {meal.get('meal_type', 'dinner')}\n\n"
