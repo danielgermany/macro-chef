@@ -448,11 +448,12 @@ class MacroChefGUI:
     def load_user(self):
         """Load the default user profile."""
         try:
-            # Try to get user ID 1 (default)
-            profile = self.user_manager.get_user(1)
+            # Try to get current user or default to user ID 1
+            user_id_to_load = self.current_user_id if self.current_user_id else 1
+            profile = self.user_manager.get_user(user_id_to_load)
 
             if profile:
-                self.current_user_id = 1
+                self.current_user_id = user_id_to_load
                 self.current_user_profile = profile
 
                 # Update form fields
@@ -534,17 +535,21 @@ class MacroChefGUI:
             return
 
         try:
-            success = self.nutrition_calc.generate_daily_targets(
+            # Generate targets (returns dict with user_id, date, and all target values)
+            targets = self.nutrition_calc.generate_daily_targets(
                 user_id=self.current_user_id,
                 target_date=date.today(),
                 is_training_day=False
             )
 
-            if success:
+            # Save targets to database
+            target_id = self.nutrition_calc.save_daily_targets(targets, self.current_user_id)
+
+            if target_id:
                 messagebox.showinfo("Success", "Daily targets generated successfully!")
                 self.refresh_dashboard()
             else:
-                messagebox.showerror("Error", "Failed to generate targets")
+                messagebox.showerror("Error", "Failed to save targets")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate targets: {e}")
@@ -660,29 +665,39 @@ class MacroChefGUI:
             return
 
         try:
-            # Get today's targets
+            # Get today's targets (to verify they exist)
             targets = self.nutrition_calc.get_daily_targets(self.current_user_id, date.today())
 
             if not targets:
                 messagebox.showwarning("Warning", "Please generate targets first (Profile tab)")
                 return
 
-            # Get recommendation
-            meal = self.meal_recommender.recommend_meal(
+            # Get recommendations (returns list of recommendations)
+            recommendations = self.meal_recommender.recommend_meal(
+                meal_time='dinner',
                 user_id=self.current_user_id,
-                meal_type='dinner',
-                target_calories=targets['calories_target'] // 3,  # Assume dinner is 1/3 of daily
-                target_protein_g=targets['protein_target_g'] // 3
+                target_date=date.today()
             )
 
-            if meal:
+            if recommendations:
+                # Get top recommendation
+                meal = recommendations[0]
                 msg = f"Recommended Meal:\n\n"
                 msg += f"Name: {meal['name']}\n"
-                msg += f"Type: {meal['meal_type']}\n\n"
+                msg += f"Type: {meal.get('meal_type', 'dinner')}\n\n"
                 msg += f"Calories: {meal['calories']} kcal\n"
                 msg += f"Protein: {meal['protein_g']}g\n"
                 msg += f"Carbs: {meal['carbs_g']}g\n"
                 msg += f"Fat: {meal['fat_g']}g\n"
+                
+                # Add optional fields if available
+                if meal.get('total_time_minutes'):
+                    msg += f"\nTime: {meal['total_time_minutes']} minutes"
+                if meal.get('cost_estimate_usd'):
+                    msg += f"\nCost: ${meal['cost_estimate_usd']:.2f}"
+                if meal.get('recommendation_score'):
+                    msg += f"\nScore: {meal['recommendation_score']}/100"
+                
                 messagebox.showinfo("Meal Recommendation", msg)
             else:
                 messagebox.showinfo("No Results", "No suitable meals found. Try searching online recipes!")
