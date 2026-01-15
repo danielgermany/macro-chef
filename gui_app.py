@@ -22,6 +22,7 @@ from scripts.meal_recommender import MealRecommender
 from scripts.inventory_manager import InventoryManager
 from scripts.db_manager import DatabaseManager
 from config.config import DATABASE_PATH
+import scripts.db_setup as db_setup
 
 
 class MacroChefGUI:
@@ -32,6 +33,12 @@ class MacroChefGUI:
         self.root.title("Macro Chef - Meal Planning & Nutrition Tracker")
         self.root.geometry("1000x700")
 
+        # Determine database path
+        self.db_path = db_path if db_path else DATABASE_PATH
+        
+        # Initialize database if needed
+        self.ensure_database_initialized()
+        
         # Initialize managers with optional database path
         if db_path:
             self.user_manager = UserProfileManager(db_path=db_path)
@@ -54,6 +61,44 @@ class MacroChefGUI:
         self.setup_styles()
         self.create_widgets()
         self.load_user()
+
+    def ensure_database_initialized(self):
+        """Check if database tables exist and create them if needed."""
+        try:
+            # Ensure database directory exists
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Check if user_profile table exists
+            db_manager = DatabaseManager(db_path=self.db_path)
+            table_exists = False
+            try:
+                table_exists = db_manager.table_exists('user_profile')
+            except Exception:
+                # Table doesn't exist or database is empty, will initialize
+                pass
+            
+            if not table_exists:
+                # Database not initialized, create all tables
+                conn = sqlite3.connect(self.db_path)
+                try:
+                    db_setup.create_tables(conn)
+                    print(f"[INFO] Database initialized at: {self.db_path}")
+                except Exception as e:
+                    messagebox.showerror(
+                        "Database Error",
+                        f"Failed to initialize database: {e}\n\n"
+                        "Please ensure you have write permissions to the database directory."
+                    )
+                    raise
+                finally:
+                    conn.close()
+            db_manager.disconnect()
+        except Exception as e:
+            messagebox.showerror(
+                "Database Error",
+                f"Failed to check/initialize database: {e}\n\n"
+                "The application may not work correctly."
+            )
 
     def setup_styles(self):
         """Configure ttk styles for better appearance."""
@@ -424,10 +469,12 @@ class MacroChefGUI:
 
                 self.user_label.config(text=f"User: {profile['name']}")
                 self.status_bar.config(text=f"Loaded profile: {profile['name']}")
+                self.root.update_idletasks()  # Ensure status bar updates immediately
                 self.refresh_dashboard()
             else:
                 self.user_label.config(text="No user profile found")
                 self.status_bar.config(text="No user profile found - please create one")
+                self.root.update_idletasks()  # Ensure status bar updates immediately
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load user profile: {e}")
@@ -475,6 +522,7 @@ class MacroChefGUI:
 
             self.load_user()
             self.status_bar.config(text="Profile saved successfully")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save profile: {e}")
@@ -539,13 +587,14 @@ class MacroChefGUI:
             stats_output += "═" * 70 + "\n\n"
 
             # Get meal count
-            conn = sqlite3.connect(DATABASE_PATH)
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM meal_templates WHERE user_id = ?", (self.current_user_id,))
             meal_count = cursor.fetchone()[0]
 
-            # Get inventory count
-            cursor.execute("SELECT COUNT(*) FROM inventory")
+            # Get inventory count (filter by user_id)
+            user_id = self.current_user_id if self.current_user_id else 1
+            cursor.execute("SELECT COUNT(*) FROM inventory WHERE user_id = ?", (user_id,))
             inv_count = cursor.fetchone()[0]
             conn.close()
 
@@ -558,6 +607,7 @@ class MacroChefGUI:
             self.stats_text.config(state='disabled')
 
             self.status_bar.config(text="Dashboard refreshed")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refresh dashboard: {e}")
@@ -569,15 +619,25 @@ class MacroChefGUI:
             for item in self.meals_tree.get_children():
                 self.meals_tree.delete(item)
 
-            # Get meals from database
-            conn = sqlite3.connect(DATABASE_PATH)
+            # Get meals from database (filter by user_id if available)
+            conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, meal_type, calories, protein_g, carbs_g, fat_g
-                FROM meal_templates
-                ORDER BY id DESC
-                LIMIT 100
-            """)
+            user_id = self.current_user_id if self.current_user_id else None
+            if user_id:
+                cursor.execute("""
+                    SELECT id, name, meal_type, calories, protein_g, carbs_g, fat_g
+                    FROM meal_templates
+                    WHERE user_id = ?
+                    ORDER BY id DESC
+                    LIMIT 100
+                """, (user_id,))
+            else:
+                cursor.execute("""
+                    SELECT id, name, meal_type, calories, protein_g, carbs_g, fat_g
+                    FROM meal_templates
+                    ORDER BY id DESC
+                    LIMIT 100
+                """)
 
             meals = cursor.fetchall()
             conn.close()
@@ -586,8 +646,11 @@ class MacroChefGUI:
                 self.meals_tree.insert('', 'end', values=meal)
 
             self.status_bar.config(text=f"Loaded {len(meals)} meals")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
 
         except Exception as e:
+            self.status_bar.config(text=f"Error loading meals: {e}")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
             messagebox.showerror("Error", f"Failed to load meals: {e}")
 
     def get_meal_recommendation(self):
@@ -634,8 +697,9 @@ class MacroChefGUI:
             for item in self.inventory_tree.get_children():
                 self.inventory_tree.delete(item)
 
-            # Get inventory items
-            items = self.inventory_manager.get_all_items()
+            # Get inventory items (use current user if available)
+            user_id = self.current_user_id if self.current_user_id else 1
+            items = self.inventory_manager.get_all_items(user_id=user_id)
 
             for item in items:
                 self.inventory_tree.insert('', 'end', values=(
@@ -649,8 +713,11 @@ class MacroChefGUI:
                 ))
 
             self.status_bar.config(text=f"Loaded {len(items)} inventory items")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
 
         except Exception as e:
+            self.status_bar.config(text=f"Error loading inventory: {e}")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
             messagebox.showerror("Error", f"Failed to load inventory: {e}")
 
     def add_inventory_item(self):
@@ -663,13 +730,17 @@ class MacroChefGUI:
 
             expiration_date = date.today() + timedelta(days=self.inv_days_var.get())
 
+            # Use current user if available, otherwise default to 1
+            user_id = self.current_user_id if self.current_user_id else 1
+
             item_id = self.inventory_manager.add_item(
                 item_name=item_name,
                 quantity=self.inv_qty_var.get(),
                 unit=self.inv_unit_var.get(),
                 category=self.inv_cat_var.get(),
                 location=self.inv_loc_var.get(),
-                expiration_date=expiration_date
+                expiration_date=expiration_date,
+                user_id=user_id
             )
 
             if item_id:
@@ -726,13 +797,16 @@ class MacroChefGUI:
 
                 self.search_results_text.insert('1.0', output)
                 self.status_bar.config(text=f"Found {len(results)} recipes")
+                self.root.update_idletasks()  # Ensure status bar updates immediately
             else:
                 self.search_results_text.insert('1.0', f"No recipes found for '{query}'")
                 self.status_bar.config(text="No results found")
+                self.root.update_idletasks()  # Ensure status bar updates immediately
 
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {e}")
             self.status_bar.config(text="Search failed")
+            self.root.update_idletasks()  # Ensure status bar updates immediately
+            messagebox.showerror("Error", f"Search failed: {e}")
 
 
 def main():
