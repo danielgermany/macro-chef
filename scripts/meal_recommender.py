@@ -184,8 +184,19 @@ class MealRecommender(DatabaseManager):
         try:
             # Build search query from criteria
             query = self._build_search_query(criteria)
+            if not query or len(query.strip()) == 0:
+                print("[WARNING] Empty search query, skipping online search")
+                return []
+
             diet = self._map_dietary_restrictions(criteria.get('dietary_restrictions', []))
             intolerances = self._map_intolerances(criteria.get('dietary_restrictions', []))
+
+            # Validate and sanitize parameters
+            min_protein = max(0, int(criteria.get('min_protein', 0)))  # Ensure non-negative
+            max_calories = max(100, int(criteria.get('max_calories', 99999)))  # Ensure positive and reasonable
+            max_ready_time = criteria.get('max_time')
+            if max_ready_time and max_ready_time <= 0:
+                max_ready_time = None  # Don't pass invalid time
 
             # Search API
             print(f"[INFO] Searching Spoonacular for '{query}' recipes...")
@@ -194,9 +205,9 @@ class MealRecommender(DatabaseManager):
                 max_results=max_results,
                 diet=diet,
                 intolerances=intolerances,
-                max_ready_time=criteria.get('max_time'),
-                min_protein=int(criteria.get('min_protein', 0)),
-                max_calories=int(criteria.get('max_calories', 99999))
+                max_ready_time=max_ready_time,
+                min_protein=min_protein,
+                max_calories=max_calories
             )
 
             if not api_results:
@@ -727,11 +738,24 @@ class MealRecommender(DatabaseManager):
         """Calculate how well meal ingredients match inventory (0-20 points)."""
 
         # Get meal ingredients
-        ingredients_query = """
-            SELECT ingredient_name FROM meal_ingredients
-            WHERE meal_template_id = ?
-        """
-        ingredients = self.execute_query(ingredients_query, (meal['id'],))
+        ingredients = []
+        
+        # Check if this is a database meal (has id) or online recipe
+        if 'id' in meal:
+            # Database meal - query ingredients
+            ingredients_query = """
+                SELECT ingredient_name FROM meal_ingredients
+                WHERE meal_template_id = ?
+            """
+            ingredients = self.execute_query(ingredients_query, (meal['id'],))
+        elif meal.get('is_online_recipe') or meal.get('api_source'):
+            # Online recipe - try to get ingredients from meal data
+            # Online recipes might have ingredients in a different format
+            # For now, return 0 (no inventory match) since we don't have ingredient data
+            return 0
+        else:
+            # Unknown meal type, return 0
+            return 0
 
         if not ingredients:
             return 0

@@ -52,14 +52,23 @@ class SpoonacularAPI(DatabaseManager):
 
                 if response.status_code == 200:
                     return response.json()
-                elif response.status_code == 402:
-                    print("[ERROR] API quota exceeded")
-                    return None
+                elif response.status_code == 400:
+                    print(f"[ERROR] Bad request (400): Invalid parameters")
+                    return None  # Don't retry client errors
                 elif response.status_code == 401:
                     print("[ERROR] Invalid API key")
-                    return None
+                    return None  # Don't retry authentication errors
+                elif response.status_code == 402:
+                    print("[ERROR] API quota exceeded")
+                    return None  # Don't retry quota errors
                 else:
                     print(f"[WARNING] API request failed: {response.status_code}")
+                    # Only retry on server errors (5xx), not client errors (4xx)
+                    if response.status_code >= 500:
+                        # Continue to retry logic below
+                        pass
+                    else:
+                        return None  # Don't retry other client errors
 
             except requests.exceptions.Timeout:
                 print(f"[WARNING] Request timeout (attempt {attempt + 1}/{MAX_API_RETRIES})")
