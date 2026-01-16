@@ -168,17 +168,17 @@ class MealRecommender(DatabaseManager):
         }
         difficulty = difficulty_map.get(meal.get('difficulty', 'medium').lower(), 'medium')
 
-        # Insert into meal_templates
+        # Insert into meal_templates (matching meal_tracker.py structure)
         insert_query = """
             INSERT INTO meal_templates (
                 user_id, name, meal_type, calories, protein_g, carbs_g, fat_g,
                 fiber_g, sugar_g, saturated_fat_g, sodium_mg, cholesterol_mg,
-                prep_time_minutes, cook_time_minutes, total_time_minutes, servings,
+                prep_time_minutes, cook_time_minutes, servings,
                 difficulty, tags, cost_estimate_usd,
-                recipe_instructions, recipe_source, description,
+                recipe_instructions, recipe_source,
                 api_source, api_recipe_id, nutrition_validated,
                 price_confidence, price_source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
         params = (
@@ -196,14 +196,12 @@ class MealRecommender(DatabaseManager):
             meal.get('cholesterol_mg'),
             meal.get('prep_time_minutes'),
             meal.get('cook_time_minutes'),
-            meal.get('total_time_minutes'),
             meal.get('servings', 1),
             difficulty,
             meal.get('tags'),
             meal.get('cost_estimate_usd'),
             meal.get('recipe_instructions', 'See source URL'),
             meal.get('recipe_source', meal.get('source_url', 'Online')),
-            meal.get('description'),
             meal.get('api_source', 'spoonacular'),
             api_recipe_id,
             meal.get('nutrition_validated', False),
