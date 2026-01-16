@@ -881,6 +881,15 @@ class DeveloperGUI:
             command=self.toggle_read_only
         ).pack(side='right', padx=10)
         
+        # Status bar (create before tabs so methods can use it)
+        self.status_bar = ttk.Label(
+            self.root,
+            text="Ready",
+            relief='sunken',
+            anchor='w'
+        )
+        self.status_bar.pack(fill='x', side='bottom')
+        
         # Tab control
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill='both', expand=True, padx=10, pady=5)
@@ -889,15 +898,6 @@ class DeveloperGUI:
         self.create_table_browser_tab()
         self.create_schema_tab()
         self.create_sql_tab()
-        
-        # Status bar
-        self.status_bar = ttk.Label(
-            self.root,
-            text="Ready",
-            relief='sunken',
-            anchor='w'
-        )
-        self.status_bar.pack(fill='x', side='bottom')
     
     def toggle_read_only(self):
         """Toggle read-only mode."""
