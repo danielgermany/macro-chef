@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import users, meals, nutrition, inventory, plans, budget, recipes
+from app.routers import users, meals, nutrition, inventory, plans, budget, recipes, auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,6 +35,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(meals.router, prefix="/api/meals", tags=["meals"])
 app.include_router(nutrition.router, prefix="/api/nutrition", tags=["nutrition"])

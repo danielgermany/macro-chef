@@ -83,6 +83,78 @@ class UserProfileManager(DatabaseManager):
 
         return user
 
+    def get_user_by_email(self, email: str) -> Optional[Dict]:
+        """Get user profile by email."""
+        query = "SELECT * FROM user_profile WHERE email = ?"
+        user = self.execute_single(query, (email,))
+
+        if user:
+            # Parse JSON fields
+            user['dietary_restrictions'] = json.loads(user.get('dietary_restrictions', '[]'))
+            user['food_dislikes'] = json.loads(user.get('food_dislikes', '[]'))
+            user['available_equipment'] = json.loads(user.get('available_equipment', '[]'))
+
+        return user
+
+    def create_user_with_auth(
+        self,
+        email: str,
+        password_hash: str,
+        name: str,
+        age: int = 30,
+        sex: str = "male",
+        height_inches: float = 70.0,
+        weight_lbs: float = 180.0,
+        body_fat_pct: Optional[float] = None,
+        goal_type: str = "maintain",
+        activity_level: str = "moderate",
+        training_days_per_week: int = 0,
+        weekly_budget_usd: float = 75.0,
+        dietary_restrictions: List[str] = None,
+        food_dislikes: List[str] = None,
+        cooking_skill: str = "beginner",
+        cooking_frequency: str = "batch_2_3x",
+        available_equipment: List[str] = None
+    ) -> int:
+        """Create a new user profile with authentication."""
+        # Check if email already exists
+        existing = self.get_user_by_email(email)
+        if existing:
+            raise ValueError(f"Email {email} already registered")
+
+        # Calculate muscle mass if body fat provided
+        muscle_mass_lbs = None
+        if body_fat_pct:
+            muscle_mass_lbs = weight_lbs * (1 - body_fat_pct / 100)
+
+        # Convert lists to JSON
+        dietary_restrictions_json = json.dumps(dietary_restrictions or [])
+        food_dislikes_json = json.dumps(food_dislikes or [])
+        equipment_json = json.dumps(available_equipment or ["oven", "stovetop", "microwave"])
+
+        query = """
+            INSERT INTO user_profile (
+                email, password_hash, name, age, sex, height_inches,
+                weight_lbs, body_fat_pct, muscle_mass_lbs,
+                goal_type, activity_level, training_days_per_week,
+                cooking_skill, cooking_frequency,
+                dietary_restrictions, food_dislikes,
+                weekly_budget_usd, available_equipment
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
+        params = (
+            email, password_hash, name, age, sex, height_inches,
+            weight_lbs, body_fat_pct, muscle_mass_lbs,
+            goal_type, activity_level, training_days_per_week,
+            cooking_skill, cooking_frequency,
+            dietary_restrictions_json, food_dislikes_json,
+            weekly_budget_usd, equipment_json
+        )
+
+        user_id = self.execute_write(query, params)
+        return user_id
+
     def update_user(self, user_id: int = DEFAULT_USER_ID, **kwargs) -> bool:
         """Update user profile fields."""
 
