@@ -1,21 +1,28 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
+import { useDailyProgress, useDeleteMeal } from '../hooks/useDailyProgress';
+import { useUser } from '../hooks/useUser';
+import { MacroProgressCard } from '../components/dashboard/MacroProgressCard';
+import { TodaysMeals } from '../components/dashboard/TodaysMeals';
+import { QuickActions } from '../components/dashboard/QuickActions';
 
 export function Dashboard() {
   const userId = 1; // TODO: Get from auth context
   
-  const { data: progress, isLoading: progressLoading } = useQuery({
-    queryKey: ['dailyProgress', userId],
-    queryFn: () => api.get(`/meals/progress?user_id=${userId}`).then(r => r.data),
-  });
+  const { data: progress, isLoading: progressLoading } = useDailyProgress(userId);
+  const { data: user } = useUser(userId);
+  const deleteMealMutation = useDeleteMeal(userId);
 
-  const { data: user } = useQuery({
-    queryKey: ['user', userId],
-    queryFn: () => api.get(`/users/${userId}`).then(r => r.data),
-  });
+  const handleDeleteMeal = (mealId: number) => {
+    if (confirm('Are you sure you want to delete this meal?')) {
+      deleteMealMutation.mutate(mealId);
+    }
+  };
 
   if (progressLoading) {
-    return <div className="animate-pulse">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-pulse text-gray-500">Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -32,48 +39,47 @@ export function Dashboard() {
 
       {/* Macro Progress Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm text-gray-500">Calories</p>
-          <p className="text-2xl font-bold">
-            {progress?.totals.calories || 0}
-            <span className="text-sm font-normal text-gray-400 ml-1">
-              / {progress?.targets.calories_target || 2000} kcal
-            </span>
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm text-gray-500">Protein</p>
-          <p className="text-2xl font-bold">
-            {progress?.totals.protein_g || 0}
-            <span className="text-sm font-normal text-gray-400 ml-1">
-              / {progress?.targets.protein_target_g || 150}g
-            </span>
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm text-gray-500">Carbs</p>
-          <p className="text-2xl font-bold">
-            {progress?.totals.carbs_g || 0}
-            <span className="text-sm font-normal text-gray-400 ml-1">
-              / {progress?.targets.carbs_target_g || 200}g
-            </span>
-          </p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <p className="text-sm text-gray-500">Fat</p>
-          <p className="text-2xl font-bold">
-            {progress?.totals.fat_g || 0}
-            <span className="text-sm font-normal text-gray-400 ml-1">
-              / {progress?.targets.fat_target_g || 70}g
-            </span>
-          </p>
-        </div>
+        <MacroProgressCard
+          label="Calories"
+          current={progress?.totals.calories || 0}
+          target={progress?.targets.calories_target || 2000}
+          unit="kcal"
+          color="bg-green-500"
+        />
+        <MacroProgressCard
+          label="Protein"
+          current={progress?.totals.protein_g || 0}
+          target={progress?.targets.protein_target_g || 150}
+          unit="g"
+          color="bg-red-500"
+        />
+        <MacroProgressCard
+          label="Carbs"
+          current={progress?.totals.carbs_g || 0}
+          target={progress?.targets.carbs_target_g || 200}
+          unit="g"
+          color="bg-blue-500"
+        />
+        <MacroProgressCard
+          label="Fat"
+          current={progress?.totals.fat_g || 0}
+          target={progress?.targets.fat_target_g || 70}
+          unit="g"
+          color="bg-yellow-500"
+        />
       </div>
 
-      {/* Placeholder for more content */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">Today's Meals</h2>
-        <p className="text-gray-500">Meal list will be displayed here</p>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's Meals */}
+        <div className="lg:col-span-2">
+          <TodaysMeals meals={progress?.meals || []} onDelete={handleDeleteMeal} />
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <QuickActions />
+        </div>
       </div>
     </div>
   );
