@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '../services/inventoryService';
+import type { InventoryItem } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -38,7 +39,7 @@ export function Inventory() {
   });
 
   const addItemMutation = useMutation({
-    mutationFn: (item: any) => inventoryService.addItem(userId, item),
+    mutationFn: (item: Partial<InventoryItem>) => inventoryService.addItem(userId, item),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', userId] });
       setShowForm(false);

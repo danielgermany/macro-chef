@@ -45,7 +45,15 @@ export function Register() {
     setIsLoading(true);
 
     try {
-      const registerData: any = {
+      const registerData: {
+        email: string;
+        password: string;
+        name: string;
+        age?: number;
+        sex?: string;
+        height_inches?: number;
+        weight_lbs?: number;
+      } = {
         email: formData.email,
         password: formData.password,
         name: formData.name,
@@ -59,8 +67,9 @@ export function Register() {
 
       await register(registerData);
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { detail?: string } } };
+      setError(error.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

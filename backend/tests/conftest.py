@@ -12,9 +12,24 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 # Add project root to path to import db_setup
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-from scripts.db_setup import create_tables
+# Handle both local and CI environments
+_backend_dir = Path(__file__).parent.parent
+_project_root = _backend_dir.parent
+sys.path.insert(0, str(_project_root))
+
+# Try importing, with fallback for CI
+try:
+    from scripts.db_setup import create_tables
+except ImportError:
+    # Fallback for CI: check if we're in backend directory
+    import os
+    cwd = Path(os.getcwd())
+    if cwd.name == 'backend':
+        _project_root = cwd.parent
+    else:
+        _project_root = cwd
+    sys.path.insert(0, str(_project_root))
+    from scripts.db_setup import create_tables
 
 def add_auth_columns(conn):
     """Add email and password_hash columns for authentication."""
