@@ -58,3 +58,18 @@ htmlcov/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# Documentation
+# Generated documentation (keep source .md files)
+docs/_build/
+docs/build/
+site/
+*.pdf   # Generated PDF docs
+# Generated HTML docs (but keep frontend/index.html)
+*.html
+!frontend/index.html
+# Keep source documentation files:
+# !README.md
+# !DOCUMENTATION.md
+# !MIGRATION_PLAN.md
+# !SPECIFICATION.md
