@@ -4,14 +4,46 @@ Pytest configuration and fixtures for backend tests.
 import pytest
 import tempfile
 import os
+import sqlite3
+import sys
 from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import app
 
+# Add project root to path to import db_setup
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+from scripts.db_setup import create_tables
+
+def add_auth_columns(conn):
+    """Add email and password_hash columns for authentication."""
+    cursor = conn.cursor()
+    try:
+        # Check if columns already exist
+        cursor.execute("PRAGMA table_info(user_profile)")
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'email' not in columns:
+            cursor.execute("ALTER TABLE user_profile ADD COLUMN email TEXT")
+        
+        if 'password_hash' not in columns:
+            cursor.execute("ALTER TABLE user_profile ADD COLUMN password_hash TEXT")
+        
+        # Create unique index on email
+        try:
+            cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_user_email ON user_profile(email)")
+        except sqlite3.OperationalError:
+            pass  # Index might already exist or have duplicates
+        
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+
 @pytest.fixture
 def temp_db():
-    """Create a temporary database for testing."""
+    """Create a temporary database for testing with schema initialized."""
     # Create temporary database file
     fd, path = tempfile.mkstemp(suffix='.db')
     os.close(fd)
@@ -19,11 +51,31 @@ def temp_db():
     # Set environment variable for test database
     os.environ['DATABASE_URL'] = f'sqlite:///{path}'
     
+    # Initialize database schema
+    conn = sqlite3.connect(path)
+    try:
+        create_tables(conn)
+        add_auth_columns(conn)
+    finally:
+        conn.close()
+    
     yield path
     
-    # Cleanup
-    if os.path.exists(path):
-        os.unlink(path)
+    # Cleanup - ensure connection is closed
+    try:
+        if os.path.exists(path):
+            # Try to close any remaining connections
+            conn = sqlite3.connect(path)
+            conn.close()
+            # Small delay to allow file system to release the file
+            import time
+            time.sleep(0.1)
+            os.unlink(path)
+    except (PermissionError, OSError):
+        # File might still be locked, but that's OK for temp files
+        # Windows will clean up temp files eventually
+        pass
+    
     if 'DATABASE_URL' in os.environ:
         del os.environ['DATABASE_URL']
 
