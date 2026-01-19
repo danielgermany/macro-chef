@@ -55,6 +55,7 @@ data/nutrition_cache.json
 .pytest_cache/
 .coverage
 htmlcov/
+*test_results.txt
 
 # Jupyter Notebook
 .ipynb_checkpoints
