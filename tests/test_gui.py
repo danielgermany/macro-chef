@@ -116,6 +116,7 @@ def temp_db():
             is_training_day BOOLEAN DEFAULT 0,
             goal_type TEXT,
             tdee_kcal INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES user_profile (id),
             UNIQUE(user_id, date)
         )
@@ -159,6 +160,7 @@ def temp_db():
             location TEXT,
             expiration_date DATE,
             purchase_date DATE DEFAULT CURRENT_DATE,
+            notes TEXT,
             FOREIGN KEY (user_id) REFERENCES user_profile (id)
         )
     """)
@@ -394,6 +396,11 @@ class TestDashboardButtons:
 
         # Refresh dashboard
         mock_gui.refresh_dashboard()
+        
+        # Give GUI time to update
+        mock_gui.root.update_idletasks()
+        import time
+        time.sleep(0.1)
 
         # Verify targets are displayed
         targets_content = mock_gui.targets_text.get('1.0', tk.END)
@@ -516,6 +523,7 @@ class TestInventoryButtons:
         create_test_user(conn, user_id=1, name="Test User", weight_lbs=150)
         
         # Create test inventory
+        cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO inventory
             (user_id, item_name, quantity, unit, category, location, expiration_date)

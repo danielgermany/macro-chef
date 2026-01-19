@@ -1234,6 +1234,12 @@ class MacroChefGUI:
             # Get today's targets
             targets = self.nutrition_calc.get_daily_targets(self.current_user_id, date.today())
             
+            # Debug: print targets if available
+            if targets:
+                print(f"[DEBUG] refresh_dashboard: Found targets: {targets}")
+            else:
+                print(f"[DEBUG] refresh_dashboard: No targets found for user {self.current_user_id} on {date.today()}")
+            
             # Get today's progress
             progress = None
             if hasattr(self, 'meal_tracker'):
@@ -1514,6 +1520,8 @@ class MacroChefGUI:
             # Use current user if available, otherwise default to 1
             user_id = self.current_user_id if self.current_user_id else 1
 
+            print(f"[DEBUG] add_inventory_item: Adding {item_name}, qty={self.inv_qty_var.get()}, unit={self.inv_unit_var.get()}, user_id={user_id}")
+            
             item_id = self.inventory_manager.add_item(
                 item_name=item_name,
                 quantity=self.inv_qty_var.get(),
@@ -1524,7 +1532,9 @@ class MacroChefGUI:
                 user_id=user_id
             )
 
-            if item_id:
+            print(f"[DEBUG] add_inventory_item: item_id={item_id}")
+
+            if item_id and item_id > 0:
                 messagebox.showinfo("Success", f"Added {item_name} to inventory!")
                 self.inv_name_var.set("")
                 self.refresh_inventory()
@@ -1532,6 +1542,9 @@ class MacroChefGUI:
                 messagebox.showerror("Error", "Failed to add item")
 
         except Exception as e:
+            print(f"[ERROR] add_inventory_item exception: {e}")
+            import traceback
+            traceback.print_exc()
             messagebox.showerror("Error", f"Failed to add inventory item: {e}")
 
     def search_recipes(self):

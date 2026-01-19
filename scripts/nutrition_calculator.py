@@ -285,7 +285,7 @@ class NutritionCalculator(DatabaseManager):
         query = """
             SELECT * FROM daily_nutrition_targets
             WHERE user_id = ? AND date = ?
-            ORDER BY created_at DESC
+            ORDER BY id DESC
             LIMIT 1
         """
 
