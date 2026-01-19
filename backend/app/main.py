@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.database import engine, Base
+from app.routers import users, meals, nutrition, inventory, plans, budget, recipes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,14 +34,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers (will be added in Phase 2)
-# app.include_router(users.router, prefix="/api/users", tags=["users"])
-# app.include_router(meals.router, prefix="/api/meals", tags=["meals"])
-# app.include_router(nutrition.router, prefix="/api/nutrition", tags=["nutrition"])
-# app.include_router(inventory.router, prefix="/api/inventory", tags=["inventory"])
-# app.include_router(plans.router, prefix="/api/plans", tags=["plans"])
-# app.include_router(budget.router, prefix="/api/budget", tags=["budget"])
-# app.include_router(recipes.router, prefix="/api/recipes", tags=["recipes"])
+# Include routers
+app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(meals.router, prefix="/api/meals", tags=["meals"])
+app.include_router(nutrition.router, prefix="/api/nutrition", tags=["nutrition"])
+app.include_router(inventory.router, prefix="/api/inventory", tags=["inventory"])
+app.include_router(plans.router, prefix="/api/plans", tags=["plans"])
+app.include_router(budget.router, prefix="/api/budget", tags=["budget"])
+app.include_router(recipes.router, prefix="/api/recipes", tags=["recipes"])
 
 @app.get("/")
 async def root():
