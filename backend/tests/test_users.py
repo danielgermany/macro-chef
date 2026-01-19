@@ -15,7 +15,7 @@ def test_create_user(client: TestClient):
             "height_inches": 72.0,
             "weight_lbs": 180.0,
             "goal_type": "cut",
-            "activity_level": "active",
+            "activity_level": "very_active",
             "training_days_per_week": 5,
             "weekly_budget_usd": 120.0,
         }

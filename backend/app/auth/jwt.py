@@ -38,16 +38,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     """Create a JWT access token."""
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    # JWT expects exp as a timestamp (seconds since epoch)
+    to_encode.update({"exp": int(expire.timestamp())})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def decode_token(token: str) -> Optional[TokenData]:
     """Decode and validate a JWT token."""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("sub")
+        user_id = payload.get("sub")
         if user_id is None:
             return None
-        return TokenData(user_id=user_id)
-    except JWTError:
+        # Ensure user_id is an integer
+        return TokenData(user_id=int(user_id))
+    except (JWTError, ValueError, TypeError):
         return None
