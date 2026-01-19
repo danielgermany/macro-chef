@@ -6,7 +6,9 @@ import { RecipeSearch } from '../components/recipes/RecipeSearch';
 import { MealHistory } from '../components/meals/MealHistory';
 import { FormField } from '../components/forms/FormField';
 import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
-import { Plus, Search, History } from 'lucide-react';
+import { exportMealLogs } from '../utils/export';
+import { mealService } from '../services/mealService';
+import { Plus, Search, History, Download } from 'lucide-react';
 import type { MealTime } from '../types/meal';
 import type { Recipe } from '../services/recipeService';
 
@@ -16,6 +18,7 @@ export function MealTracker() {
   const { showSuccess, showError } = useToast();
   const { data: progress } = useDailyProgress(userId);
   const logMealMutation = useLogMeal(userId);
+  const [isExporting, setIsExporting] = useState(false);
   
   const [showForm, setShowForm] = useState(false);
   const [showRecipeSearch, setShowRecipeSearch] = useState(false);
@@ -301,7 +304,32 @@ export function MealTracker() {
       )}
 
       {/* Meal History */}
-      {showHistory && <MealHistory userId={userId} />}
+      {showHistory && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={async () => {
+                setIsExporting(true);
+                try {
+                  const meals = await mealService.getMealHistory(userId, { days: 90 });
+                  exportMealLogs(meals);
+                  showSuccess('Meal logs exported successfully!');
+                } catch (error) {
+                  showError('Failed to export meal logs');
+                } finally {
+                  setIsExporting(false);
+                }
+              }}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              {isExporting ? 'Exporting...' : 'Export to CSV'}
+            </button>
+          </div>
+          <MealHistory userId={userId} />
+        </div>
+      )}
 
       {/* Today's Meals List */}
       {!showHistory && (

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nutritionService } from '../services/nutritionService';
+import { mealService } from '../services/mealService';
 import { useUser } from '../hooks/useUser';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { exportNutritionSummary } from '../utils/export';
 import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
-import { Target, TrendingUp } from 'lucide-react';
+import { Target, TrendingUp, Download } from 'lucide-react';
 
 export function Nutrition() {
   const { user: authUser } = useAuth();

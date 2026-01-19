@@ -4,7 +4,8 @@ import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../hooks/useUser';
 import { useToast } from '../contexts/ToastContext';
-import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus } from 'lucide-react';
+import { exportBodyMetrics } from '../utils/export';
+import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { User as UserType, BodyMetrics, ProgressSummary } from '../types/user';
 

@@ -5,8 +5,9 @@ import type { InventoryItem } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { FormField } from '../components/forms/FormField';
+import { exportInventory } from '../utils/export';
 import { Skeleton, SkeletonTable } from '../components/ui/Skeleton';
-import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
+import { Plus, AlertTriangle, Trash2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function Inventory() {
@@ -259,7 +260,25 @@ export function Inventory() {
 
       {/* Inventory List */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">All Items</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">All Items</h2>
+          {items && items.length > 0 && (
+            <button
+              onClick={() => {
+                try {
+                  exportInventory(items);
+                  showSuccess('Inventory exported successfully!');
+                } catch (error) {
+                  showError('Failed to export inventory');
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+          )}
+        </div>
         {items && items.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
