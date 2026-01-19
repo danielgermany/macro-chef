@@ -57,6 +57,7 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     name: str
+    email: Optional[str] = None
     age: int
     sex: str
     height_inches: float
