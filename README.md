@@ -4,11 +4,11 @@ An intelligent meal planning system that helps you maintain nutrition goals, min
 
 ## Quick Links
 
-- **[📖 Complete Documentation](DOCUMENTATION.md)** - Full documentation with all guides, specs, and details
-- **[🚀 Quick Start Guide](DOCUMENTATION.md#quick-start-guide)** - Get started in 5 minutes
-- **[🖥️ GUI Application Guide](DOCUMENTATION.md#gui-application)** - GUI usage and features
-- **[🌐 Web Migration Plan](MIGRATION_PLAN.md)** - FastAPI + React migration details
-- **[📋 Technical Specification](SPECIFICATION.md)** - Complete technical specs
+- **[Complete Documentation](DOCUMENTATION.md)** - Full documentation with all guides, specs, and details
+- **[Quick Start Guide](DOCUMENTATION.md#quick-start-guide)** - Get started in 5 minutes
+- **[GUI Application Guide](DOCUMENTATION.md#gui-application)** - GUI usage and features
+- **[Web Migration Plan](MIGRATION_PLAN.md)** - FastAPI + React migration details
+- **[Technical Specification](SPECIFICATION.md)** - Complete technical specs
 
 ## Features
 
@@ -74,14 +74,14 @@ For detailed technical information:
 
 ## Project Status
 
-### ✅ Completed
+### Completed
 - Core functionality (nutrition tracking, meal recommendations, inventory)
 - GUI application (tkinter)
 - Online recipe integration
 - Web backend (FastAPI) - Phase 1-2 complete
 - Web frontend (React) - Phase 3-4 complete
 
-### 🚧 In Progress
+### In Progress
 - Web authentication & multi-user support
 - Testing & deployment
 

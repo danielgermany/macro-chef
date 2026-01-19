@@ -41,13 +41,13 @@
 **Error:** Same bcrypt issue during fixture setup (`auth_token` fixture)
 
 #### Passed: `test_login_invalid_credentials`
-✓ Works correctly - returns 401 for invalid credentials
+[PASS] Works correctly - returns 401 for invalid credentials
 
 #### Passed: `test_get_current_user_no_token`
-✓ Works correctly - returns 401 without token
+[PASS] Works correctly - returns 401 without token
 
 #### Passed: `test_get_current_user_invalid_token`
-✓ Works correctly - returns 401 for invalid token
+[PASS] Works correctly - returns 401 for invalid token
 
 ---
 
@@ -124,11 +124,11 @@
 - Check if all required fields are present in test
 
 #### Passed Tests:
-- ✓ `test_get_user` - Works correctly
-- ✓ `test_get_nonexistent_user` - Returns 404 correctly
-- ✓ `test_update_user` - Update works correctly
-- ✓ `test_log_body_metrics` - Metrics logging works
-- ✓ `test_get_metrics_history` - History retrieval works
+- [PASS] `test_get_user` - Works correctly
+- [PASS] `test_get_nonexistent_user` - Returns 404 correctly
+- [PASS] `test_update_user` - Update works correctly
+- [PASS] `test_log_body_metrics` - Metrics logging works
+- [PASS] `test_get_metrics_history` - History retrieval works
 
 ---
 
@@ -261,20 +261,20 @@ from sqlalchemy.orm import declarative_base
 
 ### High Priority (Blocking Tests)
 
-1. **Bcrypt Password Hashing Issue** 🔴
+1. **Bcrypt Password Hashing Issue** [CRITICAL]
    - All auth tests failing due to bcrypt initialization
    - **Impact:** Authentication completely broken
    - **Files:** `app/auth/jwt.py`
    - **Fix:** Update password hashing or switch to argon2
 
-2. **Database Path Not Propagated** 🔴
+2. **Database Path Not Propagated** [CRITICAL]
    - Services not receiving database path from environment
    - All meal tracking tests failing
    - **Impact:** Meal tracking endpoints broken
    - **Files:** `app/routers/meals.py`, `scripts/db_manager.py`
    - **Fix:** Extract db_path from DATABASE_URL and pass to managers
 
-3. **Frontend TypeScript Errors** 🔴
+3. **Frontend TypeScript Errors** [CRITICAL]
    - Build fails due to type import issues and unused variables
    - **Impact:** Frontend cannot be built for production
    - **Files:** Multiple frontend files
@@ -282,13 +282,13 @@ from sqlalchemy.orm import declarative_base
 
 ### Medium Priority (Test Data Issues)
 
-4. **Meal Logging Response Format** 🟡
+4. **Meal Logging Response Format** [MEDIUM]
    - Endpoint doesn't return expected format
    - Missing 'id' field in response
    - **Impact:** Tests fail, but functionality may work
    - **Files:** `app/routers/meals.py`
 
-5. **User Creation Validation** 🟡
+5. **User Creation Validation** [MEDIUM]
    - Request validation failing (422 error)
    - Need to check required fields
    - **Impact:** User creation may not work
@@ -296,12 +296,12 @@ from sqlalchemy.orm import declarative_base
 
 ### Low Priority (Warnings)
 
-6. **Deprecation Warnings** 🟢
+6. **Deprecation Warnings** [LOW]
    - Pydantic v2 migration needed
    - SQLAlchemy v2 migration needed
    - **Impact:** Future compatibility issues
 
-7. **Resource Leaks** 🟢
+7. **Resource Leaks** [LOW]
    - Database connections not closed
    - **Impact:** Memory leaks in long-running tests
 
@@ -404,7 +404,7 @@ Update `DatabaseManager.__init__()` to:
 
 ## Next Steps
 
-1. ✅ Document all failures (this file)
+1. [DONE] Document all failures (this file)
 2. Fix critical issues (database path, bcrypt, TypeScript)
 3. Re-run tests to verify fixes
 4. Address medium priority issues

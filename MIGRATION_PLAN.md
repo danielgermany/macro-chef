@@ -2093,4 +2093,4 @@ If you need clarification on any section or want me to implement specific parts 
 4. Help with Docker configuration
 5. Set up database migrations with Alembic
 
-Good luck with your migration! 🚀
+Good luck with your migration!
