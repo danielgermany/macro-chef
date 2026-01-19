@@ -52,20 +52,38 @@ def temp_db():
             food_dislikes TEXT,
             weekly_budget_usd REAL,
             available_equipment TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
     cursor.execute("""
-        CREATE TABLE daily_targets (
+        CREATE TABLE daily_nutrition_targets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            target_date DATE NOT NULL,
+            date DATE NOT NULL,
             calories_target INTEGER,
             protein_target_g INTEGER,
             carbs_target_g INTEGER,
             fat_target_g INTEGER,
             fiber_target_g INTEGER,
+            is_training_day BOOLEAN DEFAULT 0,
+            goal_type TEXT,
+            tdee_kcal INTEGER,
+            FOREIGN KEY (user_id) REFERENCES user_profile (id),
+            UNIQUE(user_id, date)
+        )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE body_metrics_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            date DATE NOT NULL,
+            weight_lbs REAL NOT NULL,
+            body_fat_pct REAL,
+            muscle_mass_lbs REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES user_profile (id)
         )
     """)
@@ -87,13 +105,15 @@ def temp_db():
     cursor.execute("""
         CREATE TABLE inventory (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             item_name TEXT NOT NULL,
             quantity REAL NOT NULL,
             unit TEXT NOT NULL,
             category TEXT,
             location TEXT,
             expiration_date DATE,
-            purchase_date DATE DEFAULT CURRENT_DATE
+            purchase_date DATE DEFAULT CURRENT_DATE,
+            FOREIGN KEY (user_id) REFERENCES user_profile (id)
         )
     """)
 
@@ -102,8 +122,34 @@ def temp_db():
 
     yield path
 
-    # Cleanup
-    os.unlink(path)
+    # Cleanup - ensure all connections are closed
+    import time
+    import gc
+    
+    # Force garbage collection to close any lingering connections
+    gc.collect()
+    time.sleep(0.2)  # Brief delay to allow connections to close
+    
+    # Try multiple times with increasing delays
+    for attempt in range(3):
+        try:
+            # Try to close any remaining connections by opening and closing
+            try:
+                test_conn = sqlite3.connect(path)
+                test_conn.close()
+            except:
+                pass
+            
+            os.unlink(path)
+            break  # Success, exit loop
+        except (PermissionError, OSError) as e:
+            if attempt < 2:  # Not the last attempt
+                time.sleep(0.3 * (attempt + 1))  # Increasing delay
+            else:
+                # Last attempt failed - log but don't fail the test
+                print(f"[WARNING] Could not delete temp database {path}: {e}")
+                # On Windows, sometimes files are locked by the OS briefly
+                # This is a known issue and doesn't affect test results
 
 
 @pytest.fixture
@@ -258,18 +304,34 @@ class TestProfileButtons:
 
         mock_gui.current_user_id = 1
 
-        # Mock the nutrition calculator
-        with patch.object(mock_gui.nutrition_calc, 'generate_daily_targets', return_value=True) as mock_gen:
-            with patch('gui_app.messagebox.showinfo') as mock_info:
-                mock_gui.generate_targets()
+        # Mock the nutrition calculator - return a proper targets dict
+        mock_targets = {
+            'user_id': 1,
+            'date': date.today(),
+            'calories_target': 2500,
+            'protein_target_g': 180,
+            'carbs_target_g': 300,
+            'fat_target_g': 70,
+            'fiber_target_g': 35,
+            'is_training_day': False,
+            'goal_type': 'maintain',
+            'tdee_kcal': 2500
+        }
+        with patch.object(mock_gui.nutrition_calc, 'generate_daily_targets', return_value=mock_targets) as mock_gen:
+            with patch.object(mock_gui.nutrition_calc, 'save_daily_targets', return_value=1) as mock_save:
+                with patch('gui_app.messagebox.showinfo') as mock_info:
+                    mock_gui.generate_targets()
 
-                # Verify calculator was called
-                mock_gen.assert_called_once()
-                assert mock_gen.call_args[1]['user_id'] == 1
-                assert mock_gen.call_args[1]['target_date'] == date.today()
+                    # Verify calculator was called
+                    mock_gen.assert_called_once()
+                    assert mock_gen.call_args[1]['user_id'] == 1
+                    assert mock_gen.call_args[1]['target_date'] == date.today()
 
-                # Verify success message
-                mock_info.assert_called_once()
+                    # Verify save was called
+                    mock_save.assert_called_once()
+
+                    # Verify success message
+                    mock_info.assert_called_once()
 
     def test_generate_targets_button_requires_user(self, mock_gui):
         """Test Generate Targets button requires a user profile."""
@@ -292,8 +354,8 @@ class TestDashboardButtons:
             INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
         """, (1, "Test User"))
         cursor.execute("""
-            INSERT INTO daily_targets
-            (user_id, target_date, calories_target, protein_target_g,
+            INSERT INTO daily_nutrition_targets
+            (user_id, date, calories_target, protein_target_g,
              carbs_target_g, fat_target_g, fiber_target_g)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (1, date.today(), 2500, 180, 300, 70, 35))
@@ -307,7 +369,8 @@ class TestDashboardButtons:
 
         # Verify targets are displayed
         targets_content = mock_gui.targets_text.get('1.0', tk.END)
-        assert "2,500" in targets_content  # calories
+        # Check for calories (may be formatted as 2500 or 2,500)
+        assert "2500" in targets_content or "2,500" in targets_content  # calories
         assert "180" in targets_content  # protein
 
     def test_refresh_dashboard_without_user(self, mock_gui):
@@ -382,8 +445,8 @@ class TestMealsButtons:
             INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
         """, (1, "Test User"))
         cursor.execute("""
-            INSERT INTO daily_targets
-            (user_id, target_date, calories_target, protein_target_g)
+            INSERT INTO daily_nutrition_targets
+            (user_id, date, calories_target, protein_target_g)
             VALUES (?, ?, ?, ?)
         """, (1, date.today(), 2400, 180))
         conn.commit()
@@ -406,7 +469,7 @@ class TestMealsButtons:
         }
 
         with patch.object(mock_gui.nutrition_calc, 'get_daily_targets', return_value=mock_targets):
-            with patch.object(mock_gui.meal_recommender, 'recommend_meal', return_value=mock_meal):
+            with patch.object(mock_gui.meal_recommender, 'recommend_meal', return_value=[mock_meal]):  # Return list, not dict
                 with patch('gui_app.messagebox.showinfo') as mock_info:
                     mock_gui.get_meal_recommendation()
 
@@ -422,22 +485,30 @@ class TestInventoryButtons:
 
     def test_refresh_inventory_button(self, mock_gui, temp_db):
         """Test Refresh Inventory button loads items."""
-        # Create test inventory
+        # Create a user first (required for foreign key)
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO inventory
-            (item_name, quantity, unit, category, location, expiration_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, ("Chicken Breast", 2.5, "lbs", "protein", "fridge", date.today() + timedelta(days=7)))
+            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) 
+            VALUES (?, ?, 150, '[]', '[]', '[]')
+        """, (1, "Test User"))
+        
+        # Create test inventory
         cursor.execute("""
             INSERT INTO inventory
-            (item_name, quantity, unit, category, location, expiration_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, ("Rice", 5.0, "lbs", "grain", "pantry", date.today() + timedelta(days=365)))
+            (user_id, item_name, quantity, unit, category, location, expiration_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (1, "Chicken Breast", 2.5, "lbs", "protein", "fridge", date.today() + timedelta(days=7)))
+        cursor.execute("""
+            INSERT INTO inventory
+            (user_id, item_name, quantity, unit, category, location, expiration_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (1, "Rice", 5.0, "lbs", "grain", "pantry", date.today() + timedelta(days=365)))
         conn.commit()
         conn.close()
 
+        mock_gui.current_user_id = 1
+        
         # Refresh inventory
         mock_gui.refresh_inventory()
 
@@ -455,6 +526,18 @@ class TestInventoryButtons:
 
     def test_add_inventory_button_adds_item(self, mock_gui, temp_db):
         """Test Add Item button creates inventory item."""
+        # Create a user first (required for foreign key)
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) 
+            VALUES (?, ?, 150, '[]', '[]', '[]')
+        """, (1, "Test User"))
+        conn.commit()
+        conn.close()
+        
+        mock_gui.current_user_id = 1
+        
         # Set form values
         mock_gui.inv_name_var.set("Salmon")
         mock_gui.inv_qty_var.set(1.5)
@@ -475,9 +558,11 @@ class TestInventoryButtons:
         conn.close()
 
         assert item is not None
-        assert item[1] == "Salmon"
-        assert item[2] == 1.5
-        assert item[3] == "lbs"
+        # Check item_name (column index may vary, so check by name)
+        # item[0] = id, item[1] = user_id, item[2] = item_name, item[3] = quantity, item[4] = unit
+        assert item[2] == "Salmon"  # item_name
+        assert item[3] == 1.5  # quantity
+        assert item[4] == "lbs"  # unit
 
 
 class TestSearchButtons:

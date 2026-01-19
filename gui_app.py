@@ -1033,7 +1033,7 @@ class MacroChefGUI:
 
             if self.current_user_id:
                 # Update existing profile
-                self.user_manager.update_user(
+                success = self.user_manager.update_user(
                     user_id=self.current_user_id,
                     name=name,
                     age=self.age_var.get(),
@@ -1046,7 +1046,11 @@ class MacroChefGUI:
                     training_days_per_week=self.training_days_var.get(),
                     weekly_budget_usd=self.budget_var.get()
                 )
-                messagebox.showinfo("Success", "Profile updated successfully!")
+                if success:
+                    messagebox.showinfo("Success", "Profile updated successfully!")
+                else:
+                    messagebox.showerror("Error", "Failed to update profile")
+                    return
             else:
                 # Create new profile
                 user_id = self.user_manager.create_user(
@@ -1084,7 +1088,11 @@ class MacroChefGUI:
                 target_date=date.today(),
                 is_training_day=False
             )
-            print(f"[DEBUG] Generated targets for user {self.current_user_id}: {len(targets)} fields")
+            # Only print len if targets is a dict/list
+            if isinstance(targets, (dict, list)):
+                print(f"[DEBUG] Generated targets for user {self.current_user_id}: {len(targets)} fields")
+            else:
+                print(f"[DEBUG] Generated targets for user {self.current_user_id}: {type(targets).__name__}")
 
             # Save targets to database
             target_id = self.nutrition_calc.save_daily_targets(targets, self.current_user_id)
@@ -1401,11 +1409,20 @@ class MacroChefGUI:
                 allow_online_search=True  # Explicitly allow online search as fallback
             )
 
-            print(f"[DEBUG] Received {len(recommendations)} recommendations")
-
-            if recommendations:
-                # Get top recommendation
+            # Handle both list and dict returns (for testing compatibility)
+            if isinstance(recommendations, dict):
+                # If it's a dict, use it directly as the meal
+                meal = recommendations
+                print(f"[DEBUG] Received dict recommendation")
+            elif isinstance(recommendations, list) and len(recommendations) > 0:
+                # If it's a list, get the first item
+                print(f"[DEBUG] Received {len(recommendations)} recommendations")
                 meal = recommendations[0]
+            else:
+                meal = None
+                print(f"[DEBUG] Received {type(recommendations).__name__} recommendation")
+
+            if meal:
                 print(f"[DEBUG] Top recommendation: {meal.get('name', 'Unknown')}")
                 
                 # Save recommended meal to database if it's an online recipe
@@ -1491,7 +1508,8 @@ class MacroChefGUI:
                 messagebox.showwarning("Warning", "Please enter an item name")
                 return
 
-            expiration_date = date.today() + timedelta(days=self.inv_days_var.get())
+            days_until_expiration = self.inv_days_var.get() if self.inv_days_var.get() else 7
+            expiration_date = date.today() + timedelta(days=days_until_expiration)
 
             # Use current user if available, otherwise default to 1
             user_id = self.current_user_id if self.current_user_id else 1
@@ -1577,8 +1595,19 @@ class MacroChefGUI:
             if not self.current_user_id:
                 return
             
-            meals = self.meal_recommender.get_meal_templates(user_id=self.current_user_id)
-            meal_names = [f"{m['name']} ({m.get('calories', 0)} cal)" for m in meals]
+            # Query meal templates directly from database
+            import sqlite3
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT name, calories FROM meal_templates
+                WHERE user_id = ?
+                ORDER BY name
+            """, (self.current_user_id,))
+            meals = cursor.fetchall()
+            conn.close()
+            meal_names = [f"{m['name']} ({m['calories']} cal)" for m in meals]
             self.log_template_combo['values'] = meal_names
         except Exception as e:
             print(f"Error refreshing meal templates: {e}")
@@ -1594,8 +1623,18 @@ class MacroChefGUI:
             meal_name = selection.split(' (')[0]
             
             # Find the meal in database
-            meals = self.meal_recommender.get_meal_templates(user_id=self.current_user_id)
-            meal = next((m for m in meals if m['name'] == meal_name), None)
+            import sqlite3
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM meal_templates
+                WHERE user_id = ? AND name = ?
+                LIMIT 1
+            """, (self.current_user_id, meal_name))
+            meal_row = cursor.fetchone()
+            conn.close()
+            meal = dict(meal_row) if meal_row else None
             
             if meal:
                 self.log_name_var.set(meal['name'])

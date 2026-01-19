@@ -251,6 +251,35 @@ class MealRecommender(DatabaseManager):
 
         return self.execute_query(query, tuple(params))
 
+    def search_online_recipes(
+        self,
+        query: str,
+        max_results: int = 10,
+        max_calories: Optional[int] = None,
+        min_protein: Optional[int] = None,
+        max_ready_time: Optional[int] = None,
+        user_id: int = DEFAULT_USER_ID
+    ) -> List[Dict]:
+        """
+        Public method to search online recipes.
+        Converts parameters to criteria dict and calls _search_online_recipes.
+        """
+        # Get user for dietary restrictions
+        user = self.user_manager.get_user(user_id) if user_id else None
+        
+        criteria = {
+            'meal_time': 'dinner',  # Default, not used for search
+            'target_calories': max_calories or 99999,
+            'min_protein': min_protein or 0,
+            'max_calories': max_calories or 99999,
+            'max_time': max_ready_time,
+            'dietary_restrictions': user.get('dietary_restrictions', []) if user else [],
+            'food_dislikes': user.get('food_dislikes', []) if user else [],
+            'query': query  # Add query to criteria
+        }
+        
+        return self._search_online_recipes(criteria, max_results)
+
     def _search_online_recipes(
         self,
         criteria: Dict,
@@ -358,7 +387,27 @@ class MealRecommender(DatabaseManager):
                 print(f"[WARNING] {failed_count}/{len(api_results)} recipes failed to parse")
 
             print(f"[SUCCESS] Parsed {len(parsed_meals)} online recipes")
-            return parsed_meals
+            
+            # Transform meal template format to API-like format for GUI compatibility
+            api_like_results = []
+            for meal in parsed_meals:
+                api_like_recipe = {
+                    'id': int(meal.get('api_recipe_id', 0)) if meal.get('api_recipe_id') else 0,
+                    'title': meal.get('name', 'Unknown Recipe'),
+                    'readyInMinutes': meal.get('total_time_minutes') or meal.get('prep_time_minutes', 0) + meal.get('cook_time_minutes', 0),
+                    'nutrition': {
+                        'calories': meal.get('calories', 0),
+                        'protein': meal.get('protein_g', 0),
+                        'carbs': meal.get('carbs_g', 0),
+                        'fat': meal.get('fat_g', 0)
+                    },
+                    'is_validated': meal.get('nutrition_validated', False),
+                    # Keep original meal data for internal use
+                    '_meal_data': meal
+                }
+                api_like_results.append(api_like_recipe)
+            
+            return api_like_results
 
         except Exception as e:
             print(f"[ERROR] Online recipe search failed: {e}")
