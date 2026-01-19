@@ -170,19 +170,35 @@ class GUITestHarness:
                 self.simulate_click(generate_button)
                 self.root.update()
                 
+                # Wait longer for database write and GUI updates
+                import time
+                time.sleep(0.5)  # Wait 500ms
+                self.root.update()
+                
+                # Check status bar for errors
+                status_text = ""
+                if hasattr(self.app, 'status_bar'):
+                    status_text = self.app.status_bar.cget("text")
+                    if "Error" in status_text or "error" in status_text.lower():
+                        self.log_test("Step 2: Generate Targets", "FAIL", f"Error in status bar: {status_text}")
+                        return
+                
                 # Check if targets were created
                 target_count = self.check_database("daily_nutrition_targets", f"user_id = {self.app.current_user_id}")
                 if target_count > 0:
                     self.log_test("Step 2: Generate Targets", "PASS", f"Targets created ({target_count} record)")
                 else:
-                    self.log_test("Step 2: Generate Targets", "FAIL", "No targets found in database")
+                    # Additional check - try to see if there's a more specific error
+                    error_msg = f"No targets found in database. Status: {status_text}" if status_text else "No targets found in database"
+                    self.log_test("Step 2: Generate Targets", "FAIL", error_msg)
             else:
                 self.log_test("Step 2: Generate Targets", "FAIL", "Generate Targets button not found")
                 
         except Exception as e:
-            self.log_test(self.current_test, "FAIL", f"Exception: {e}")
             import traceback
-            traceback.print_exc()
+            error_details = f"Exception: {e}\n{traceback.format_exc()}"
+            self.log_test(self.current_test, "FAIL", f"Exception: {e}")
+            print(f"[TEST ERROR] Full traceback:\n{traceback.format_exc()}")
     
     def test_flow_2_meal_recommendation(self):
         """Test Flow 2: Get meal recommendation."""
@@ -304,25 +320,37 @@ class GUITestHarness:
                     self.simulate_click(log_button)
                     self.root.update()
                     
-                    # Wait a bit for database write
-                    self.root.after(500, lambda: None)
+                    # Wait longer for database write and GUI updates
+                    import time
+                    time.sleep(0.5)  # Wait 500ms
                     self.root.update()
+                    
+                    # Check status bar for errors
+                    status_text = ""
+                    if hasattr(self.app, 'status_bar'):
+                        status_text = self.app.status_bar.cget("text")
+                        if "Error" in status_text or "error" in status_text.lower():
+                            self.log_test("Log Meal", "FAIL", f"Error in status bar: {status_text}")
+                            return
                     
                     final_count = self.check_database("daily_nutrition_progress", f"user_id = {self.app.current_user_id}")
                     
                     if final_count > initial_count:
                         self.log_test("Log Meal", "PASS", f"Meal logged (count: {initial_count} -> {final_count})")
                     else:
-                        self.log_test("Log Meal", "FAIL", f"Meal not logged (count: {initial_count} -> {final_count})")
+                        # Additional check - try to see if there's a more specific error
+                        error_msg = f"Meal not logged (count: {initial_count} -> {final_count}). Status: {status_text}" if status_text else f"Meal not logged (count: {initial_count} -> {final_count})"
+                        self.log_test("Log Meal", "FAIL", error_msg)
                 else:
                     self.log_test("Log Meal", "FAIL", "Log Meal button not found")
             else:
                 self.log_test("Log Meal", "FAIL", "Log form variables not found")
                 
         except Exception as e:
-            self.log_test(self.current_test, "FAIL", f"Exception: {e}")
             import traceback
-            traceback.print_exc()
+            error_details = f"Exception: {e}\n{traceback.format_exc()}"
+            self.log_test(self.current_test, "FAIL", f"Exception: {e}")
+            print(f"[TEST ERROR] Full traceback:\n{traceback.format_exc()}")
     
     def test_flow_4_weekly_planning(self):
         """Test Flow 4: Create weekly meal plan."""

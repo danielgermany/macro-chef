@@ -208,38 +208,69 @@ class NutritionCalculator(DatabaseManager):
     ) -> int:
         """Save daily targets to database."""
 
+        # Define valid database columns (excluding id, created_at which are auto-generated)
+        valid_columns = [
+            'user_id', 'date', 'calories_target', 'protein_target_g', 'carbs_target_g',
+            'fat_target_g', 'fiber_target_g', 'sugar_limit_g', 'saturated_fat_limit_g',
+            'sodium_limit_mg', 'cholesterol_limit_mg', 'vitamin_d_target_mcg',
+            'vitamin_c_target_mg', 'vitamin_a_target_mcg', 'calcium_target_mg',
+            'iron_target_mg', 'magnesium_target_mg', 'potassium_target_mg',
+            'zinc_target_mg', 'omega3_target_g', 'is_training_day', 'goal_type',
+            'tdee_kcal', 'notes'
+        ]
+
+        # Filter targets to only include valid columns
+        filtered_targets = {k: v for k, v in targets.items() if k in valid_columns}
+        
+        # Ensure user_id and date are set correctly
+        filtered_targets['user_id'] = user_id
+        if 'date' not in filtered_targets:
+            filtered_targets['date'] = targets.get('date')
+
         # Check if targets already exist for this date
         existing = self.execute_single(
             "SELECT id FROM daily_nutrition_targets WHERE user_id = ? AND date = ?",
-            (user_id, targets['date'])
+            (user_id, filtered_targets['date'])
         )
 
         if existing:
-            # Update existing
-            fields = ', '.join([f"{k} = ?" for k in targets.keys() if k not in ['user_id', 'date']])
-            values = [v for k, v in targets.items() if k not in ['user_id', 'date']]
-            values.extend([user_id, targets['date']])
+            # Update existing - exclude user_id and date from SET clause
+            update_fields = {k: v for k, v in filtered_targets.items() if k not in ['user_id', 'date']}
+            fields = ', '.join([f"{k} = ?" for k in update_fields.keys()])
+            values = list(update_fields.values())
+            values.extend([user_id, filtered_targets['date']])
 
             query = f"""
                 UPDATE daily_nutrition_targets
                 SET {fields}
                 WHERE user_id = ? AND date = ?
             """
-            self.execute_write(query, tuple(values))
-            print(f"[SUCCESS] Daily targets updated for {targets['date']}")
-            return existing['id']
+            try:
+                self.execute_write(query, tuple(values))
+                print(f"[SUCCESS] Daily targets updated for {filtered_targets['date']}")
+                return existing['id']
+            except Exception as e:
+                print(f"[ERROR] Failed to update daily targets: {e}")
+                raise
         else:
             # Insert new
-            columns = ', '.join(targets.keys())
-            placeholders = ', '.join(['?' for _ in targets])
+            columns = ', '.join(filtered_targets.keys())
+            placeholders = ', '.join(['?' for _ in filtered_targets])
+            values = list(filtered_targets.values())
 
             query = f"""
                 INSERT INTO daily_nutrition_targets ({columns})
                 VALUES ({placeholders})
             """
-            target_id = self.execute_write(query, tuple(targets.values()))
-            print(f"[SUCCESS] Daily targets created for {targets['date']}")
-            return target_id
+            try:
+                target_id = self.execute_write(query, tuple(values))
+                print(f"[SUCCESS] Daily targets created for {filtered_targets['date']}")
+                return target_id
+            except Exception as e:
+                print(f"[ERROR] Failed to insert daily targets: {e}")
+                print(f"[DEBUG] Columns: {columns}")
+                print(f"[DEBUG] Values: {values}")
+                raise
 
     def get_daily_targets(
         self,

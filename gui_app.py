@@ -1084,18 +1084,30 @@ class MacroChefGUI:
                 target_date=date.today(),
                 is_training_day=False
             )
+            print(f"[DEBUG] Generated targets for user {self.current_user_id}: {len(targets)} fields")
 
             # Save targets to database
             target_id = self.nutrition_calc.save_daily_targets(targets, self.current_user_id)
 
             if target_id:
+                print(f"[SUCCESS] Targets saved with ID: {target_id}")
                 messagebox.showinfo("Success", "Daily targets generated successfully!")
                 self.refresh_dashboard()
+                self.status_bar.config(text="Daily targets generated successfully")
+                self.root.update_idletasks()
             else:
-                messagebox.showerror("Error", "Failed to save targets")
+                error_msg = "Failed to save targets - save_daily_targets returned None"
+                print(f"[ERROR] {error_msg}")
+                messagebox.showerror("Error", error_msg)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate targets: {e}")
+            import traceback
+            error_msg = f"Failed to generate targets: {e}"
+            print(f"[ERROR] {error_msg}")
+            print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
+            messagebox.showerror("Error", error_msg)
+            self.status_bar.config(text=f"Error: {str(e)}")
+            self.root.update_idletasks()
 
     def log_body_metrics(self):
         """Log body metrics to database."""
@@ -1379,21 +1391,28 @@ class MacroChefGUI:
                 messagebox.showwarning("Warning", "Please generate targets first (Profile tab)")
                 return
 
+            print(f"[DEBUG] Getting meal recommendation for user {self.current_user_id}")
+            
             # Get recommendations (returns list of recommendations)
             recommendations = self.meal_recommender.recommend_meal(
                 meal_time='dinner',
                 user_id=self.current_user_id,
-                target_date=date.today()
+                target_date=date.today(),
+                allow_online_search=True  # Explicitly allow online search as fallback
             )
+
+            print(f"[DEBUG] Received {len(recommendations)} recommendations")
 
             if recommendations:
                 # Get top recommendation
                 meal = recommendations[0]
+                print(f"[DEBUG] Top recommendation: {meal.get('name', 'Unknown')}")
                 
                 # Save recommended meal to database if it's an online recipe
                 try:
                     saved_id = self.meal_recommender.save_recommended_meal(meal, self.current_user_id)
                     if saved_id:
+                        print(f"[SUCCESS] Saved recommended meal to database with ID: {saved_id}")
                         self.status_bar.config(text=f"Saved meal '{meal['name']}' to database")
                         self.root.update_idletasks()
                 except Exception as save_error:
@@ -1417,11 +1436,22 @@ class MacroChefGUI:
                     msg += f"\nScore: {meal['recommendation_score']}/100"
                 
                 messagebox.showinfo("Meal Recommendation", msg)
+                self.status_bar.config(text=f"Recommended: {meal['name']}")
+                self.root.update_idletasks()
             else:
+                print("[INFO] No recommendations found - database may be empty or online search unavailable")
                 messagebox.showinfo("No Results", "No suitable meals found. Try searching online recipes!")
+                self.status_bar.config(text="No meal recommendations available")
+                self.root.update_idletasks()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to get recommendation: {e}")
+            import traceback
+            error_msg = f"Failed to get recommendation: {e}"
+            print(f"[ERROR] {error_msg}")
+            print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
+            messagebox.showerror("Error", error_msg)
+            self.status_bar.config(text=f"Error getting recommendation: {str(e)}")
+            self.root.update_idletasks()
 
     def refresh_inventory(self):
         """Refresh inventory list."""
@@ -1597,12 +1627,16 @@ class MacroChefGUI:
             meal_time = self.log_meal_time_var.get()
             servings = self.log_servings_var.get()
             
+            print(f"[DEBUG] Logging meal: {meal_name}, calories={calories}, protein={protein}g, carbs={carbs}g, fat={fat}g")
+            
             # Parse date
             meal_date_str = self.log_date_var.get()
             try:
                 meal_date = date.fromisoformat(meal_date_str)
-            except ValueError:
-                messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD")
+            except ValueError as ve:
+                error_msg = f"Invalid date format. Use YYYY-MM-DD. Got: {meal_date_str}"
+                print(f"[ERROR] {error_msg}: {ve}")
+                messagebox.showerror("Error", error_msg)
                 return
             
             # Apply servings multiplier
@@ -1611,6 +1645,7 @@ class MacroChefGUI:
                 protein = protein * servings
                 carbs = carbs * servings
                 fat = fat * servings
+                print(f"[DEBUG] Applied servings multiplier {servings}x")
             
             # Log meal
             meal_id = self.meal_tracker.log_meal(
@@ -1625,6 +1660,7 @@ class MacroChefGUI:
             )
             
             if meal_id:
+                print(f"[SUCCESS] Meal logged with ID: {meal_id}")
                 messagebox.showinfo("Success", f"Meal logged successfully!")
                 self.clear_log_form()
                 self.refresh_progress()
@@ -1632,10 +1668,18 @@ class MacroChefGUI:
                 self.status_bar.config(text=f"Meal logged: {meal_name}")
                 self.root.update_idletasks()
             else:
-                messagebox.showerror("Error", "Failed to log meal")
+                error_msg = "Failed to log meal - log_meal returned None"
+                print(f"[ERROR] {error_msg}")
+                messagebox.showerror("Error", error_msg)
                 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to log meal: {e}")
+            import traceback
+            error_msg = f"Failed to log meal: {e}"
+            print(f"[ERROR] {error_msg}")
+            print(f"[ERROR] Traceback:\n{traceback.format_exc()}")
+            messagebox.showerror("Error", error_msg)
+            self.status_bar.config(text=f"Error: {str(e)}")
+            self.root.update_idletasks()
 
     def clear_log_form(self):
         """Clear the meal logging form."""
