@@ -4,6 +4,7 @@ import { inventoryService } from '../services/inventoryService';
 import type { InventoryItem } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { FormField } from '../components/forms/FormField';
 import { Skeleton, SkeletonTable } from '../components/ui/Skeleton';
 import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -44,6 +45,7 @@ export function Inventory() {
     location: 'pantry',
     expiration_date: '',
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const addItemMutation = useMutation({
     mutationFn: (item: Partial<InventoryItem>) => inventoryService.addItem(userId, item),
@@ -58,6 +60,7 @@ export function Inventory() {
         location: 'pantry',
         expiration_date: '',
       });
+      setErrors({});
       showSuccess('Item added successfully');
     },
     onError: () => {
@@ -65,13 +68,41 @@ export function Inventory() {
     },
   });
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.item_name.trim()) {
+      newErrors.item_name = 'Item name is required';
+    }
+
+    const quantityNum = parseFloat(formData.quantity);
+    if (!formData.quantity || isNaN(quantityNum) || quantityNum <= 0) {
+      newErrors.quantity = 'Valid quantity is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     addItemMutation.mutate({
       ...formData,
       quantity: parseFloat(formData.quantity),
       expiration_date: formData.expiration_date || undefined,
     });
+  };
+
+  const handleFormChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: '' });
+    }
   };
 
   if (isLoading) {

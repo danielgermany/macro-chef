@@ -3,6 +3,7 @@ import { useDailyProgress, useLogMeal, useMealRecommendations } from '../hooks/u
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { RecipeSearch } from '../components/recipes/RecipeSearch';
+import { FormField } from '../components/forms/FormField';
 import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { Plus, Search } from 'lucide-react';
 import type { MealTime } from '../types/meal';
@@ -23,11 +24,48 @@ export function MealTracker() {
   const [protein, setProtein] = useState('');
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: recommendations } = useMealRecommendations(userId, mealTime, showForm);
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!mealName.trim()) {
+      newErrors.mealName = 'Meal name is required';
+    }
+
+    const caloriesNum = parseInt(calories);
+    if (!calories || isNaN(caloriesNum) || caloriesNum < 0) {
+      newErrors.calories = 'Valid calories amount is required';
+    }
+
+    const proteinNum = parseFloat(protein);
+    if (protein === '' || isNaN(proteinNum) || proteinNum < 0) {
+      newErrors.protein = 'Valid protein amount is required';
+    }
+
+    const carbsNum = parseFloat(carbs);
+    if (carbs === '' || isNaN(carbsNum) || carbsNum < 0) {
+      newErrors.carbs = 'Valid carbs amount is required';
+    }
+
+    const fatNum = parseFloat(fat);
+    if (fat === '' || isNaN(fatNum) || fatNum < 0) {
+      newErrors.fat = 'Valid fat amount is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     logMealMutation.mutate({
       meal_name: mealName,
       calories: parseInt(calories),
@@ -43,6 +81,7 @@ export function MealTracker() {
         setProtein('');
         setCarbs('');
         setFat('');
+        setErrors({});
         showSuccess('Meal logged successfully!');
       },
       onError: () => {
@@ -106,22 +145,20 @@ export function MealTracker() {
           <h2 className="text-xl font-semibold mb-4">Log New Meal</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Meal Name
-                </label>
+              <FormField label="Meal Name" error={errors.mealName} required>
                 <input
                   type="text"
                   value={mealName}
-                  onChange={(e) => setMealName(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  onChange={(e) => {
+                    setMealName(e.target.value);
+                    if (errors.mealName) setErrors({ ...errors, mealName: '' });
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    errors.mealName ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Meal Time
-                </label>
+              </FormField>
+              <FormField label="Meal Time">
                 <select
                   value={mealTime}
                   onChange={(e) => setMealTime(e.target.value as MealTime)}
@@ -132,65 +169,69 @@ export function MealTracker() {
                   <option value="dinner">Dinner</option>
                   <option value="snack">Snack</option>
                 </select>
-              </div>
+              </FormField>
             </div>
 
             <div className="grid grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Calories
-                </label>
+              <FormField label="Calories" error={errors.calories} required>
                 <input
                   type="number"
                   value={calories}
-                  onChange={(e) => setCalories(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setCalories(e.target.value);
+                    if (errors.calories) setErrors({ ...errors, calories: '' });
+                  }}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    errors.calories ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Protein (g)
-                </label>
+              </FormField>
+              <FormField label="Protein (g)" error={errors.protein} required>
                 <input
                   type="number"
                   value={protein}
-                  onChange={(e) => setProtein(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setProtein(e.target.value);
+                    if (errors.protein) setErrors({ ...errors, protein: '' });
+                  }}
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    errors.protein ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Carbs (g)
-                </label>
+              </FormField>
+              <FormField label="Carbs (g)" error={errors.carbs} required>
                 <input
                   type="number"
                   value={carbs}
-                  onChange={(e) => setCarbs(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setCarbs(e.target.value);
+                    if (errors.carbs) setErrors({ ...errors, carbs: '' });
+                  }}
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    errors.carbs ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fat (g)
-                </label>
+              </FormField>
+              <FormField label="Fat (g)" error={errors.fat} required>
                 <input
                   type="number"
                   value={fat}
-                  onChange={(e) => setFat(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setFat(e.target.value);
+                    if (errors.fat) setErrors({ ...errors, fat: '' });
+                  }}
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    errors.fat ? 'border-red-300' : 'border-gray-300'
+                  }`}
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="flex gap-3">
