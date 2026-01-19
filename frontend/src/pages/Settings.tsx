@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../hooks/useUser';
 import { useToast } from '../contexts/ToastContext';
 import { exportBodyMetrics } from '../utils/export';
-import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus, Download } from 'lucide-react';
+import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus, Download, Lock, Mail } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { User as UserType, BodyMetrics, ProgressSummary } from '../types/user';
 
@@ -21,7 +21,7 @@ export function Settings() {
   const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'metrics' | 'preferences'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'metrics' | 'preferences' | 'security'>('profile');
   const [showMetricsForm, setShowMetricsForm] = useState(false);
 
   // Profile update mutation
@@ -68,6 +68,46 @@ export function Settings() {
   // Metrics form state
   const [metricsForm, setMetricsForm] = useState<Partial<BodyMetrics>>({
     measurement_date: format(new Date(), 'yyyy-MM-dd'),
+  });
+
+  // Security form state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [emailForm, setEmailForm] = useState({
+    newEmail: '',
+    password: '',
+  });
+
+  // Password change mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: () => userService.changePassword(
+      passwordForm.currentPassword,
+      passwordForm.newPassword,
+      passwordForm.confirmPassword
+    ),
+    onSuccess: () => {
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      showSuccess('Password changed successfully!');
+    },
+    onError: (error: any) => {
+      showError(error.response?.data?.detail || 'Failed to change password');
+    },
+  });
+
+  // Email change mutation
+  const changeEmailMutation = useMutation({
+    mutationFn: () => userService.changeEmail(emailForm.newEmail, emailForm.password),
+    onSuccess: () => {
+      setEmailForm({ newEmail: '', password: '' });
+      queryClient.invalidateQueries({ queryKey: ['user', userId] });
+      showSuccess('Email changed successfully!');
+    },
+    onError: (error: any) => {
+      showError(error.response?.data?.detail || 'Failed to change email');
+    },
   });
 
   if (isLoadingUser) {
@@ -143,6 +183,17 @@ export function Settings() {
             >
               <SettingsIcon className="w-5 h-5 inline mr-2" />
               Preferences
+            </button>
+            <button
+              onClick={() => setActiveTab('security')}
+              className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'security'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Lock className="w-5 h-5 inline mr-2" />
+              Security
             </button>
           </nav>
         </div>
@@ -598,6 +649,166 @@ export function Settings() {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === 'security' && (
+            <div className="space-y-8">
+              <h2 className="text-xl font-semibold">Security Settings</h2>
+
+              {/* Change Password Section */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Lock className="w-6 h-6 text-primary-600" />
+                  <h3 className="text-lg font-semibold">Change Password</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">
+                  Update your password to keep your account secure. Use a strong password with at least 8 characters.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+                      showError('New password and confirmation do not match');
+                      return;
+                    }
+                    if (passwordForm.newPassword.length < 8) {
+                      showError('Password must be at least 8 characters long');
+                      return;
+                    }
+                    changePasswordMutation.mutate();
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={passwordForm.currentPassword}
+                      onChange={(e) =>
+                        setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Enter your current password"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      value={passwordForm.newPassword}
+                      onChange={(e) =>
+                        setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Enter your new password (min. 8 characters)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      minLength={8}
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Confirm your new password"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={changePasswordMutation.isPending}
+                      className="flex items-center gap-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                    >
+                      <Lock className="w-5 h-5" />
+                      {changePasswordMutation.isPending ? 'Changing...' : 'Change Password'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Change Email Section */}
+              <div className="border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Mail className="w-6 h-6 text-primary-600" />
+                  <h3 className="text-lg font-semibold">Change Email Address</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">
+                  Update your email address. You'll need to enter your current password to confirm the change.
+                </p>
+                {user.email && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-600">Current email: </span>
+                    <span className="text-sm font-medium text-gray-900">{user.email}</span>
+                  </div>
+                )}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!emailForm.newEmail.includes('@')) {
+                      showError('Please enter a valid email address');
+                      return;
+                    }
+                    changeEmailMutation.mutate();
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={emailForm.newEmail}
+                      onChange={(e) =>
+                        setEmailForm({ ...emailForm, newEmail: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Enter your new email address"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={emailForm.password}
+                      onChange={(e) =>
+                        setEmailForm({ ...emailForm, password: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Enter your current password to confirm"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={changeEmailMutation.isPending}
+                      className="flex items-center gap-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                    >
+                      <Mail className="w-5 h-5" />
+                      {changeEmailMutation.isPending ? 'Changing...' : 'Change Email'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>

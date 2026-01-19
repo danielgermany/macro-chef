@@ -1,6 +1,7 @@
 export interface User {
   id: number;
   name: string;
+  email?: string;
   age: number;
   sex: 'male' | 'female';
   height_inches: number;
