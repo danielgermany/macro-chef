@@ -19,6 +19,7 @@ from scripts.budget_tracker import BudgetTracker
 from scripts.shopping_list import ShoppingListGenerator
 from scripts.spoonacular_api import SpoonacularAPI
 from scripts.usda_api import USDAAPI
+from scripts.usda_api import USDAAPI
 
 __all__ = [
     "UserProfileManager",

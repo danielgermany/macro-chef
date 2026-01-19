@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 
 from app.schemas.recipe import RecipeSearchParams, RecipeSearchResponse
-from app.services import MealRecommender
+from app.services import MealRecommender, SpoonacularAPI
 
 router = APIRouter()
 
@@ -36,16 +36,23 @@ async def search_recipes(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+def get_spoonacular_api() -> SpoonacularAPI:
+    return SpoonacularAPI()
+
 @router.get("/{recipe_id}", response_model=dict)
 async def get_recipe_details(
     recipe_id: int,
-    recommender: MealRecommender = Depends(get_meal_recommender)
+    api: SpoonacularAPI = Depends(get_spoonacular_api)
 ):
     """Get detailed recipe information by ID."""
     try:
-        # This would need to be implemented in MealRecommender or SpoonacularAPI
-        # For now, return a placeholder
-        raise HTTPException(status_code=501, detail="Not yet implemented")
+        # Get recipe details from Spoonacular API
+        recipe_details = api.get_recipe_information(recipe_id)
+        
+        if not recipe_details:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+        
+        return recipe_details
     except HTTPException:
         raise
     except Exception as e:

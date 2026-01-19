@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { recipeService } from '../../services/recipeService';
-import { Search, Clock, Flame, Zap } from 'lucide-react';
+import { RecipeDetailsModal } from './RecipeDetailsModal';
+import { Search, Clock, Flame, Zap, Eye } from 'lucide-react';
 import type { Recipe } from '../../services/recipeService';
 
 interface RecipeSearchProps {
@@ -17,6 +18,7 @@ export function RecipeSearch({ userId, onSelectRecipe, maxResults = 10, showFilt
   const [minProtein, setMinProtein] = useState<number | undefined>();
   const [maxReadyTime, setMaxReadyTime] = useState<number | undefined>();
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
 
   const { data: recipes, isLoading } = useQuery({
     queryKey: ['recipes', userId, searchQuery, maxCalories, minProtein, maxReadyTime],
@@ -133,8 +135,7 @@ export function RecipeSearch({ userId, onSelectRecipe, maxResults = 10, showFilt
                 {recipes.map((recipe) => (
                   <div
                     key={recipe.id}
-                    className="bg-white border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => handleSelectRecipe(recipe)}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all"
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-900">{recipe.title}</h3>
@@ -158,8 +159,23 @@ export function RecipeSearch({ userId, onSelectRecipe, maxResults = 10, showFilt
                         <span>{recipe.readyInMinutes} min</span>
                       </div>
                     </div>
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-gray-500 mb-3">
                       {recipe.nutrition.carbs}g carbs • {recipe.nutrition.fat}g fat
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSelectRecipe(recipe)}
+                        className="flex-1 px-3 py-1.5 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors"
+                      >
+                        Use Recipe
+                      </button>
+                      <button
+                        onClick={() => setSelectedRecipeId(recipe.id)}
+                        className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-1"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Details
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -171,6 +187,14 @@ export function RecipeSearch({ userId, onSelectRecipe, maxResults = 10, showFilt
             </div>
           )}
         </div>
+      )}
+
+      {/* Recipe Details Modal */}
+      {selectedRecipeId && (
+        <RecipeDetailsModal
+          recipeId={selectedRecipeId}
+          onClose={() => setSelectedRecipeId(null)}
+        />
       )}
     </div>
   );

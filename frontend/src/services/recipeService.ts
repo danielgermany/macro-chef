@@ -22,6 +22,36 @@ export interface Recipe {
   api_recipe_id?: string;
 }
 
+export interface RecipeDetails {
+  id: number;
+  title: string;
+  readyInMinutes: number;
+  servings: number;
+  image?: string;
+  sourceUrl?: string;
+  spoonacularSourceUrl?: string;
+  vegetarian?: boolean;
+  vegan?: boolean;
+  glutenFree?: boolean;
+  nutrition?: {
+    nutrients: Array<{
+      name: string;
+      amount: number;
+      unit: string;
+    }>;
+  };
+  extendedIngredients?: Array<{
+    name: string;
+    amount: number;
+    unit: string;
+  }>;
+  analyzedInstructions?: Array<{
+    steps: Array<{
+      step: string;
+    }>;
+  }>;
+}
+
 export const recipeService = {
   async searchRecipes(
     userId: number,
@@ -44,6 +74,11 @@ export const recipeService = {
     }
 
     const response = await api.get(`/recipes/search?${searchParams}`);
+    return response.data;
+  },
+
+  async getRecipeDetails(recipeId: number): Promise<RecipeDetails> {
+    const response = await api.get(`/recipes/${recipeId}`);
     return response.data;
   },
 };
