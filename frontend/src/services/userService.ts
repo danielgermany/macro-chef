@@ -31,4 +31,20 @@ export const userService = {
     const response = await api.get(`/users/${userId}/progress?days=${days}`);
     return response.data;
   },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const response = await api.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+    return response.data;
+  },
+
+  async changeEmail(newEmail: string, password: string): Promise<{ message: string; new_email: string }> {
+    const response = await api.post('/auth/change-email', {
+      new_email: newEmail,
+      password: password,
+    });
+    return response.data;
+  },
 };

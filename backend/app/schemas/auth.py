@@ -5,28 +5,32 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 class Token(BaseModel):
-    """JWT token response."""
     access_token: str
     token_type: str = "bearer"
 
 class UserLogin(BaseModel):
-    """User login request."""
     email: EmailStr
-    password: str = Field(..., min_length=8)
+    password: str
 
 class UserRegister(BaseModel):
-    """User registration request."""
     email: EmailStr
-    password: str = Field(..., min_length=8, max_length=100)
-    name: str = Field(..., min_length=1, max_length=100)
-    age: Optional[int] = Field(None, ge=13, le=120)
-    sex: Optional[str] = Field(None, pattern="^(male|female)$")
-    height_inches: Optional[float] = Field(None, gt=0, le=120)
-    weight_lbs: Optional[float] = Field(None, gt=0, le=1000)
+    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    name: str
+    age: Optional[int] = None
+    sex: Optional[str] = None
+    height_inches: Optional[float] = None
+    weight_lbs: Optional[float] = None
 
 class UserRegisterResponse(BaseModel):
-    """User registration response."""
     id: int
     email: str
     name: str
-    message: str = "User registered successfully"
+    message: str
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8, description="New password must be at least 8 characters")
+
+class EmailChange(BaseModel):
+    new_email: EmailStr
+    password: str  # Require password confirmation for security
