@@ -5,6 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { MacroProgressCard } from '../components/dashboard/MacroProgressCard';
 import { TodaysMeals } from '../components/dashboard/TodaysMeals';
 import { QuickActions } from '../components/dashboard/QuickActions';
+import { WeightChart } from '../components/dashboard/WeightChart';
 
 export function Dashboard() {
   const { user: authUser } = useAuth();
@@ -92,6 +93,9 @@ export function Dashboard() {
           <QuickActions />
         </div>
       </div>
+
+      {/* Weight Progress Chart */}
+      <WeightChart userId={userId} days={30} />
     </div>
   );
 }
