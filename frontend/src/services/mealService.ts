@@ -14,8 +14,21 @@ export const mealService = {
     return response.data;
   },
 
-  async getMealHistory(userId: number, days: number = 7): Promise<MealLog[]> {
-    const response = await api.get(`/meals/history?user_id=${userId}&days=${days}`);
+  async getMealHistory(
+    userId: number,
+    options?: {
+      days?: number;
+      startDate?: string;
+      endDate?: string;
+      mealName?: string;
+    }
+  ): Promise<MealLog[]> {
+    const params = new URLSearchParams({ user_id: String(userId) });
+    if (options?.days) params.append('days', String(options.days));
+    if (options?.startDate) params.append('start_date', options.startDate);
+    if (options?.endDate) params.append('end_date', options.endDate);
+    if (options?.mealName) params.append('meal_name', options.mealName);
+    const response = await api.get(`/meals/history?${params.toString()}`);
     return response.data;
   },
 

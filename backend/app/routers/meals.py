@@ -65,12 +65,32 @@ async def get_daily_progress(
 @router.get("/history", response_model=List[MealLogResponse])
 async def get_meal_history(
     user_id: int = Query(..., description="User ID"),
-    days: int = Query(7, ge=1, le=90),
+    days: Optional[int] = Query(None, ge=1, le=90),
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     meal_name: Optional[str] = None,
     tracker: MealTracker = Depends(get_meal_tracker)
 ):
-    """Get meal history."""
-    return tracker.get_meal_history(days=days, meal_name=meal_name, user_id=user_id)
+    """Get meal history with optional filtering by date range or meal name."""
+    # If date range is provided, use it; otherwise use days
+    if start_date and end_date:
+        # Calculate days from date range
+        delta = (end_date - start_date).days + 1
+        days = min(delta, 90)  # Cap at 90 days
+    elif not days:
+        days = 7  # Default to 7 days
+    
+    history = tracker.get_meal_history(days=days, meal_name=meal_name, user_id=user_id)
+    
+    # Filter by date range if provided
+    if start_date and end_date:
+        filtered_history = [
+            meal for meal in history
+            if start_date <= date.fromisoformat(meal['meal_date']) <= end_date
+        ]
+        return filtered_history
+    
+    return history
 
 @router.get("/weekly-summary", response_model=WeeklySummaryResponse)
 async def get_weekly_summary(

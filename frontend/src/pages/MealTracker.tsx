@@ -3,9 +3,10 @@ import { useDailyProgress, useLogMeal, useMealRecommendations } from '../hooks/u
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { RecipeSearch } from '../components/recipes/RecipeSearch';
+import { MealHistory } from '../components/meals/MealHistory';
 import { FormField } from '../components/forms/FormField';
 import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, History } from 'lucide-react';
 import type { MealTime } from '../types/meal';
 import type { Recipe } from '../services/recipeService';
 
@@ -18,6 +19,7 @@ export function MealTracker() {
   
   const [showForm, setShowForm] = useState(false);
   const [showRecipeSearch, setShowRecipeSearch] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [mealTime, setMealTime] = useState<MealTime>('dinner');
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
@@ -97,8 +99,24 @@ export function MealTracker() {
         <div className="flex gap-2">
           <button
             onClick={() => {
+              setShowHistory(!showHistory);
+              setShowForm(false);
+              setShowRecipeSearch(false);
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              showHistory
+                ? 'bg-gray-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            <History className="w-5 h-5" />
+            History
+          </button>
+          <button
+            onClick={() => {
               setShowRecipeSearch(!showRecipeSearch);
               setShowForm(false);
+              setShowHistory(false);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -109,6 +127,7 @@ export function MealTracker() {
             onClick={() => {
               setShowForm(!showForm);
               setShowRecipeSearch(false);
+              setShowHistory(false);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
@@ -281,37 +300,42 @@ export function MealTracker() {
         </div>
       )}
 
+      {/* Meal History */}
+      {showHistory && <MealHistory userId={userId} />}
+
       {/* Today's Meals List */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">Today's Meals</h2>
-        {progress?.meals && progress.meals.length > 0 ? (
-          <div className="space-y-3">
-            {progress.meals.map((meal) => (
-              <div
-                key={meal.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-              >
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-500 capitalize">
-                      {meal.meal_time}
-                    </span>
-                    <span className="text-lg font-semibold">{meal.meal_name}</span>
-                  </div>
-                  <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                    <span>{meal.calories} kcal</span>
-                    <span>{meal.protein_g}g protein</span>
-                    <span>{meal.carbs_g}g carbs</span>
-                    <span>{meal.fat_g}g fat</span>
+      {!showHistory && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold mb-4">Today's Meals</h2>
+          {progress?.meals && progress.meals.length > 0 ? (
+            <div className="space-y-3">
+              {progress.meals.map((meal) => (
+                <div
+                  key={meal.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                >
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-500 capitalize">
+                        {meal.meal_time}
+                      </span>
+                      <span className="text-lg font-semibold">{meal.meal_name}</span>
+                    </div>
+                    <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                      <span>{meal.calories} kcal</span>
+                      <span>{meal.protein_g}g protein</span>
+                      <span>{meal.carbs_g}g carbs</span>
+                      <span>{meal.fat_g}g fat</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center py-8">No meals logged today</p>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No meals logged today</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
