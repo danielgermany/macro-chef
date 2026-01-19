@@ -20,6 +20,52 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from gui_app import MacroChefGUI
 
 
+def create_test_user(conn, user_id=1, name="Test User", **kwargs):
+    """Helper function to create a test user in the database."""
+    cursor = conn.cursor()
+    defaults = {
+        'name': name,
+        'age': 30,
+        'sex': 'male',
+        'height_inches': 70,
+        'weight_lbs': 180,
+        'body_fat_pct': 15.0,
+        'goal_type': 'maintain',
+        'activity_level': 'moderate',
+        'training_days_per_week': 3,
+        'weekly_budget_usd': 100.0,
+        'dietary_restrictions': '[]',
+        'food_dislikes': '[]',
+        'available_equipment': '[]'
+    }
+    defaults.update(kwargs)
+    
+    cursor.execute("""
+        INSERT INTO user_profile 
+        (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
+         goal_type, activity_level, training_days_per_week, weekly_budget_usd,
+         dietary_restrictions, food_dislikes, available_equipment)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        user_id,
+        defaults['name'],
+        defaults['age'],
+        defaults['sex'],
+        defaults['height_inches'],
+        defaults['weight_lbs'],
+        defaults['body_fat_pct'],
+        defaults['goal_type'],
+        defaults['activity_level'],
+        defaults['training_days_per_week'],
+        defaults['weekly_budget_usd'],
+        defaults['dietary_restrictions'],
+        defaults['food_dislikes'],
+        defaults['available_equipment']
+    ))
+    conn.commit()
+    return user_id
+
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database for testing."""
@@ -223,17 +269,11 @@ class TestProfileButtons:
 
     def test_save_profile_button_updates_existing_user(self, mock_gui, temp_db):
         """Test Save Profile button updates existing user."""
-        # Create initial user
+        # Create initial user using helper
         conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile
-            (name, age, sex, height_inches, weight_lbs, body_fat_pct, goal_type, activity_level,
-             dietary_restrictions, food_dislikes, available_equipment)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, ("Original User", 25, "female", 65, 150, 20.0, "cut", "light", '[]', '[]', '[]'))
-        conn.commit()
-        user_id = cursor.lastrowid
+        user_id = create_test_user(conn, name="Original User", age=25, sex="female", 
+                                   height_inches=65, weight_lbs=150, body_fat_pct=20.0,
+                                   goal_type="cut", activity_level="light")
         conn.close()
 
         # Set current user
@@ -262,15 +302,10 @@ class TestProfileButtons:
         """Test Load Profile button loads user data."""
         # Create user
         conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile
-            (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
-             goal_type, activity_level, training_days_per_week, weekly_budget_usd,
-             dietary_restrictions, food_dislikes, available_equipment)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (1, "Test User", 30, "male", 70, 180, 15.0, "bulk", "moderate", 4, 120.0, '[]', '[]', '[]'))
-        conn.commit()
+        create_test_user(conn, user_id=1, name="Test User", age=30, sex="male", 
+                        height_inches=70, weight_lbs=180, body_fat_pct=15.0,
+                        goal_type="bulk", activity_level="moderate", 
+                        training_days_per_week=4, weekly_budget_usd=120.0)
         conn.close()
 
         # Load profile
@@ -290,16 +325,11 @@ class TestProfileButtons:
 
     def test_generate_targets_button(self, mock_gui, temp_db):
         """Test Generate Targets button creates daily targets."""
-        # Create user first
+        # Create user first using helper
         conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile
-            (id, name, age, sex, height_inches, weight_lbs, body_fat_pct,
-             goal_type, activity_level, dietary_restrictions, food_dislikes, available_equipment)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (1, "Test User", 30, "male", 70, 180, 15.0, "maintain", "moderate", '[]', '[]', '[]'))
-        conn.commit()
+        create_test_user(conn, user_id=1, name="Test User", age=30, sex="male",
+                        height_inches=70, weight_lbs=180, body_fat_pct=15.0,
+                        goal_type="maintain", activity_level="moderate")
         conn.close()
 
         mock_gui.current_user_id = 1
@@ -349,10 +379,8 @@ class TestDashboardButtons:
         """Test Refresh Dashboard button updates display."""
         # Create user and targets
         conn = sqlite3.connect(temp_db)
+        create_test_user(conn, user_id=1, name="Test User", weight_lbs=150)
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
-        """, (1, "Test User"))
         cursor.execute("""
             INSERT INTO daily_nutrition_targets
             (user_id, date, calories_target, protein_target_g,
@@ -440,10 +468,8 @@ class TestMealsButtons:
         """Test Get Recommendation button displays a meal."""
         # Create user and targets
         conn = sqlite3.connect(temp_db)
+        create_test_user(conn, user_id=1, name="Test User", weight_lbs=150)
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
-        """, (1, "Test User"))
         cursor.execute("""
             INSERT INTO daily_nutrition_targets
             (user_id, date, calories_target, protein_target_g)
@@ -487,11 +513,7 @@ class TestInventoryButtons:
         """Test Refresh Inventory button loads items."""
         # Create a user first (required for foreign key)
         conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) 
-            VALUES (?, ?, 150, '[]', '[]', '[]')
-        """, (1, "Test User"))
+        create_test_user(conn, user_id=1, name="Test User", weight_lbs=150)
         
         # Create test inventory
         cursor.execute("""
@@ -528,12 +550,7 @@ class TestInventoryButtons:
         """Test Add Item button creates inventory item."""
         # Create a user first (required for foreign key)
         conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) 
-            VALUES (?, ?, 150, '[]', '[]', '[]')
-        """, (1, "Test User"))
-        conn.commit()
+        create_test_user(conn, user_id=1, name="Test User", weight_lbs=150)
         conn.close()
         
         mock_gui.current_user_id = 1
@@ -654,10 +671,7 @@ class TestButtonCallbacks:
         """Test that button callbacks update the status bar."""
         # Create user
         conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO user_profile (id, name, weight_lbs, dietary_restrictions, food_dislikes, available_equipment) VALUES (?, ?, 150, '[]', '[]', '[]')
-        """, (1, "Test User"))
+        create_test_user(conn, user_id=1, name="Test User", weight_lbs=150)
         conn.commit()
         conn.close()
 
