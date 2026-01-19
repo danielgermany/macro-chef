@@ -45,13 +45,13 @@ class MacroChefGUI:
         # Initialize managers with optional database path
         if db_path:
             self.user_manager = UserProfileManager(db_path=db_path)
-            self.nutrition_calc = NutritionCalculator()  # Uses default path internally
-            self.meal_recommender = MealRecommender()  # Uses default path internally
+            self.nutrition_calc = NutritionCalculator(db_path=db_path)
+            self.meal_recommender = MealRecommender(db_path=db_path)
             self.inventory_manager = InventoryManager(db_path=db_path)
             self.db_manager = DatabaseManager(db_path=db_path)
-            self.meal_tracker = MealTracker()  # Uses default path internally
-            self.weekly_planner = WeeklyPlanner()  # Uses default path internally
-            self.budget_tracker = BudgetTracker()  # Uses default path internally
+            self.meal_tracker = MealTracker(db_path=db_path)
+            self.weekly_planner = WeeklyPlanner(db_path=db_path)
+            self.budget_tracker = BudgetTracker(db_path=db_path)
         else:
             self.user_manager = UserProfileManager()
             self.nutrition_calc = NutritionCalculator()

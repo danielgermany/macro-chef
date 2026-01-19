@@ -9,80 +9,80 @@ Created comprehensive unit tests for all GUI buttons and their functionality in 
 **Overall: 11/23 tests passing (48%)**
 
 The passing tests validate core functionality:
-- ✅ Button callback existence
-- ✅ Form validation
-- ✅ Error handling
-- ✅ Warning messages for missing inputs
-- ✅ Status bar updates
+- [PASS] Button callback existence
+- [PASS] Form validation
+- [PASS] Error handling
+- [PASS] Warning messages for missing inputs
+- [PASS] Status bar updates
 
 ## Test Categories
 
 ### 1. Profile Tab Buttons (6 tests)
 
 **Save Profile Button:**
-- ✅ Requires name validation
-- ❌ Creates new user (needs database manager fix)
-- ❌ Updates existing user (needs database manager fix)
+- [PASS] Requires name validation
+- [FAIL] Creates new user (needs database manager fix)
+- [FAIL] Updates existing user (needs database manager fix)
 
 **Load Profile Button:**
-- ❌ Loads user data (needs user_manager.get_user fix)
+- [FAIL] Loads user data (needs user_manager.get_user fix)
 
 **Generate Targets Button:**
-- ✅ Creates daily targets
-- ✅ Requires user profile
+- [PASS] Creates daily targets
+- [PASS] Requires user profile
 
 **Status:** 3/6 passing
 
 ### 2. Dashboard Tab Buttons (2 tests)
 
 **Refresh Dashboard Button:**
-- ✅ Handles missing user gracefully
-- ❌ Updates display (needs nutrition_calc.get_targets method)
+- [PASS] Handles missing user gracefully
+- [FAIL] Updates display (needs nutrition_calc.get_targets method)
 
 **Status:** 1/2 passing
 
 ### 3. Meals Tab Buttons (4 tests)
 
 **Refresh Meals Button:**
-- ✅ Loads meal list from database
+- [PASS] Loads meal list from database
 
 **Get Recommendation Button:**
-- ✅ Requires user profile
-- ❌ Requires targets (method name mismatch)
-- ❌ Shows meal recommendation (method name mismatch)
+- [PASS] Requires user profile
+- [FAIL] Requires targets (method name mismatch)
+- [FAIL] Shows meal recommendation (method name mismatch)
 
 **Status:** 2/4 passing
 
 ### 4. Inventory Tab Buttons (3 tests)
 
 **Refresh Inventory Button:**
-- ❌ Loads inventory items (needs inventory_manager.list_inventory fix)
+- [FAIL] Loads inventory items (needs inventory_manager.list_inventory fix)
 
 **Add Item Button:**
-- ✅ Requires item name
-- ❌ Adds inventory item (needs inventory_manager.add_item fix)
+- [PASS] Requires item name
+- [FAIL] Adds inventory item (needs inventory_manager.add_item fix)
 
 **Status:** 1/3 passing
 
 ### 5. Search Recipes Tab Buttons (4 tests)
 
 **Search Button:**
-- ✅ Requires search query
-- ❌ Calls API with filters (method exists, needs proper mocking)
-- ❌ Handles no results (method exists, needs proper mocking)
-- ❌ Handles API errors (method exists, needs proper mocking)
+- [PASS] Requires search query
+- [FAIL] Calls API with filters (method exists, needs proper mocking)
+- [FAIL] Handles no results (method exists, needs proper mocking)
+- [FAIL] Handles API errors (method exists, needs proper mocking)
 
 **Status:** 1/4 passing
 
 ### 6. General Button Tests (4 tests)
 
 **Button Callbacks:**
-- ✅ All buttons have valid callbacks
-- ✅ Callbacks update status bar
+- [PASS] All buttons have valid callbacks
+- [PASS] Callbacks update status bar
 
 **Form Validation:**
-- ✅ Validates required fields
-- ❌ Accepts valid numeric input (database write issue)
+- [PASS] Validates required fields
+- [FAIL] Accepts valid numeric input (database write issue)
 
 **Status:** 3/4 passing
 
@@ -133,7 +133,7 @@ Some tests need better mocking of:
 
 ## What's Tested
 
-### ✅ Working Tests Cover
+### [PASS] Working Tests Cover
 
 1. **Button Existence**
    - All 9 main buttons have valid callbacks
@@ -155,7 +155,7 @@ Some tests need better mocking of:
    - Meal list refresh
    - Inventory list refresh
 
-### ❌ Failing Tests Need
+### [FAIL] Failing Tests Need
 
 1. **Database Integration Fixes**
    - Pass db_path to managers

@@ -21,12 +21,12 @@ from config.config import DEFAULT_USER_ID
 class WeeklyPlanner(DatabaseManager):
     """Create and manage weekly meal plans."""
 
-    def __init__(self):
-        super().__init__()
-        self.recommender = MealRecommender()
-        self.shopping_gen = ShoppingListGenerator()
-        self.user_manager = UserProfileManager()
-        self.nutrition_calc = NutritionCalculator()
+    def __init__(self, db_path=None):
+        super().__init__(db_path=db_path)
+        self.recommender = MealRecommender(db_path=db_path) if db_path else MealRecommender()
+        self.shopping_gen = ShoppingListGenerator(db_path=db_path) if db_path else ShoppingListGenerator()
+        self.user_manager = UserProfileManager(db_path=db_path) if db_path else UserProfileManager()
+        self.nutrition_calc = NutritionCalculator(db_path=db_path) if db_path else NutritionCalculator()
 
     def generate_weekly_plan(
         self,

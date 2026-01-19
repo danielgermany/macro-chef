@@ -24,8 +24,8 @@ from config.config import (
 class SpoonacularAPI(DatabaseManager):
     """Interface to Spoonacular API with caching."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, db_path=None):
+        super().__init__(db_path=db_path)
         self.api_key = SPOONACULAR_API_KEY
         self.base_url = SPOONACULAR_BASE_URL
 

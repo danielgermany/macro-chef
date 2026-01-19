@@ -50,7 +50,9 @@ class GUITestHarness:
         
     def log_test(self, test_name, status, message=""):
         """Log test result."""
-        status_symbol = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+        # Use ASCII-safe symbols for Windows console compatibility
+        status_symbol = "[PASS]" if status == "PASS" else "[FAIL]" if status == "FAIL" else "[WARN]"
+        
         result = f"{status_symbol} {test_name}: {status}"
         if message:
             result += f" - {message}"
@@ -656,14 +658,15 @@ class GUITestHarness:
         print("TEST SUMMARY")
         print("="*60)
         
-        passed = sum(1 for r in self.test_results if "✅" in r)
-        failed = sum(1 for r in self.test_results if "❌" in r)
-        warned = sum(1 for r in self.test_results if "⚠️" in r)
+        # Count results using multiple possible formats
+        passed = sum(1 for r in self.test_results if ("[PASS]" in r or ": PASS" in r))
+        failed = sum(1 for r in self.test_results if ("[FAIL]" in r or ": FAIL" in r))
+        warned = sum(1 for r in self.test_results if ("[WARN]" in r or ": WARN" in r))
         
         print(f"\nTotal Tests: {len(self.test_results)}")
-        print(f"✅ Passed: {passed}")
-        print(f"❌ Failed: {failed}")
-        print(f"⚠️  Warnings: {warned}")
+        print(f"Passed: {passed}")
+        print(f"Failed: {failed}")
+        print(f"Warnings: {warned}")
         
         print("\nDetailed Results:")
         for result in self.test_results:

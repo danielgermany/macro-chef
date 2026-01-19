@@ -19,9 +19,9 @@ from config.config import DEFAULT_USER_ID
 class ShoppingListGenerator(DatabaseManager):
     """Generate and manage shopping lists."""
 
-    def __init__(self):
-        super().__init__()
-        self.inventory_manager = InventoryManager()
+    def __init__(self, db_path=None):
+        super().__init__(db_path=db_path)
+        self.inventory_manager = InventoryManager(db_path=db_path) if db_path else InventoryManager()
 
         # Category mapping for organization
         self.category_map = {

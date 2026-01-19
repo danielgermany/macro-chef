@@ -22,13 +22,13 @@ from config.config import DEFAULT_USER_ID
 class MealRecommender(DatabaseManager):
     """Recommend meals based on user needs and constraints."""
 
-    def __init__(self):
-        super().__init__()
-        self.meal_tracker = MealTracker()
-        self.inventory_manager = InventoryManager()
-        self.user_manager = UserProfileManager()
-        self.spoonacular_api = SpoonacularAPI()
-        self.usda_api = USDAAPI()
+    def __init__(self, db_path=None):
+        super().__init__(db_path=db_path)
+        self.meal_tracker = MealTracker(db_path=db_path) if db_path else MealTracker()
+        self.inventory_manager = InventoryManager(db_path=db_path) if db_path else InventoryManager()
+        self.user_manager = UserProfileManager(db_path=db_path) if db_path else UserProfileManager()
+        self.spoonacular_api = SpoonacularAPI(db_path=db_path) if db_path else SpoonacularAPI()
+        self.usda_api = USDAAPI(db_path=db_path) if db_path else USDAAPI()
 
     def recommend_meal(
         self,

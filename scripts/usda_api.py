@@ -23,8 +23,8 @@ from config.config import (
 class USDAAPI(DatabaseManager):
     """Interface to USDA FoodData Central API with caching."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, db_path=None):
+        super().__init__(db_path=db_path)
         self.api_key = USDA_API_KEY
         self.base_url = USDA_BASE_URL
 

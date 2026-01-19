@@ -21,9 +21,9 @@ from config.config import (
 class NutritionCalculator(DatabaseManager):
     """Calculate nutrition targets and analyze progress."""
 
-    def __init__(self):
-        super().__init__()
-        self.user_manager = UserProfileManager()
+    def __init__(self, db_path=None):
+        super().__init__(db_path=db_path)
+        self.user_manager = UserProfileManager(db_path=db_path) if db_path else UserProfileManager()
 
     def calculate_bmr(
         self,
