@@ -415,6 +415,10 @@ class MealRecommender(DatabaseManager):
 
     def _build_search_query(self, criteria: Dict) -> str:
         """Build search query string from meal criteria."""
+        # Use explicit query if provided, otherwise build from meal_time
+        if criteria.get('query'):
+            return criteria.get('query')
+        
         meal_time = criteria.get('meal_time', 'dinner')
 
         # Map meal_time to search terms

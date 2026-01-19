@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useDailyProgress, useLogMeal, useMealRecommendations } from '../hooks/useDailyProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Plus } from 'lucide-react';
+import { RecipeSearch } from '../components/recipes/RecipeSearch';
+import { Plus, Search } from 'lucide-react';
 import type { MealTime } from '../types/meal';
+import type { Recipe } from '../services/recipeService';
 
 export function MealTracker() {
   const { user: authUser } = useAuth();
@@ -13,6 +15,7 @@ export function MealTracker() {
   const logMealMutation = useLogMeal(userId);
   
   const [showForm, setShowForm] = useState(false);
+  const [showRecipeSearch, setShowRecipeSearch] = useState(false);
   const [mealTime, setMealTime] = useState<MealTime>('dinner');
   const [mealName, setMealName] = useState('');
   const [calories, setCalories] = useState('');
@@ -51,14 +54,50 @@ export function MealTracker() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Meal Tracker</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Log Meal
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setShowRecipeSearch(!showRecipeSearch);
+              setShowForm(false);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Search className="w-5 h-5" />
+            Search Recipes
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(!showForm);
+              setShowRecipeSearch(false);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Log Meal
+          </button>
+        </div>
       </div>
+
+      {/* Recipe Search */}
+      {showRecipeSearch && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold mb-4">Search Online Recipes</h2>
+          <RecipeSearch
+            userId={userId}
+            onSelectRecipe={(recipe) => {
+              setMealName(recipe.title);
+              setCalories(String(recipe.nutrition.calories));
+              setProtein(String(recipe.nutrition.protein));
+              setCarbs(String(recipe.nutrition.carbs));
+              setFat(String(recipe.nutrition.fat));
+              setShowRecipeSearch(false);
+              setShowForm(true);
+              showSuccess(`Added ${recipe.title} to meal form`);
+            }}
+            maxResults={12}
+          />
+        </div>
+      )}
 
       {/* Log Meal Form */}
       {showForm && (
