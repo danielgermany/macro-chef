@@ -14,6 +14,8 @@ def test_register_user(client: TestClient):
             "name": "New User",
         }
     )
+    if response.status_code != 201:
+        print(f"ERROR: Status {response.status_code}, Response: {response.text}")
     assert response.status_code == 201
     data = response.json()
     assert data["email"] == "newuser@example.com"

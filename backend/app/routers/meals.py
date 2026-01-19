@@ -60,7 +60,17 @@ async def get_daily_progress(
     tracker: MealTracker = Depends(get_meal_tracker)
 ):
     """Get nutrition progress for a specific day."""
-    return tracker.get_daily_progress(user_id=user_id, target_date=target_date)
+    import json
+    # #region agent log
+    with open(r'd:\Projects\macro-chef\.cursor\debug.log', 'a', encoding='utf-8') as f:
+        f.write(json.dumps({"location":"meals.py:57","message":"Get daily progress called","data":{"userId":user_id,"targetDate":str(target_date)},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"F"}) + '\n')
+    # #endregion
+    result = tracker.get_daily_progress(user_id=user_id, target_date=target_date)
+    # #region agent log
+    with open(r'd:\Projects\macro-chef\.cursor\debug.log', 'a', encoding='utf-8') as f:
+        f.write(json.dumps({"location":"meals.py:63","message":"Daily progress result","data":{"hasTotals":bool(result.get("totals")),"hasTargets":bool(result.get("targets")),"hasMeals":bool(result.get("meals"))},"timestamp":int(__import__('time').time()*1000),"sessionId":"debug-session","runId":"run1","hypothesisId":"F"}) + '\n')
+    # #endregion
+    return result
 
 @router.get("/history", response_model=List[MealLogResponse])
 async def get_meal_history(

@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { format, parseISO, subDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 interface WeightChartProps {
   userId: number;
@@ -71,11 +71,13 @@ export function WeightChart({ userId, days = 30 }: WeightChartProps) {
             />
           )}
           <Tooltip
-            formatter={(value: number, name: string) => {
-              if (name === 'weight') return [`${value.toFixed(1)} lbs`, 'Weight'];
-              if (name === 'bodyFat') return [`${value.toFixed(1)}%`, 'Body Fat'];
-              if (name === 'muscle') return [`${value.toFixed(1)} lbs`, 'Muscle'];
-              return [value, name];
+            formatter={(value: number | undefined, name: string | undefined) => {
+              const nameStr = name || 'Unknown';
+              if (value === undefined) return ['N/A', nameStr] as [string, string];
+              if (nameStr === 'weight') return [`${value.toFixed(1)} lbs`, 'Weight'] as [string, string];
+              if (nameStr === 'bodyFat') return [`${value.toFixed(1)}%`, 'Body Fat'] as [string, string];
+              if (nameStr === 'muscle') return [`${value.toFixed(1)} lbs`, 'Muscle'] as [string, string];
+              return [String(value), nameStr] as [string, string];
             }}
             labelStyle={{ color: '#374151' }}
           />

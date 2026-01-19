@@ -4,7 +4,6 @@ import { inventoryService } from '../services/inventoryService';
 import type { InventoryItem } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { FormField } from '../components/forms/FormField';
 import { exportInventory } from '../utils/export';
 import { Skeleton, SkeletonTable } from '../components/ui/Skeleton';
 import { Plus, AlertTriangle, Trash2, Download } from 'lucide-react';
@@ -46,7 +45,7 @@ export function Inventory() {
     location: 'pantry',
     expiration_date: '',
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [_errors, setErrors] = useState<Record<string, string>>({});
 
   const addItemMutation = useMutation({
     mutationFn: (item: Partial<InventoryItem>) => inventoryService.addItem(userId, item),
@@ -99,12 +98,6 @@ export function Inventory() {
     });
   };
 
-  const handleFormChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: '' });
-    }
-  };
 
   if (isLoading) {
     return (

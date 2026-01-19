@@ -182,6 +182,34 @@ class UserProfileManager(DatabaseManager):
         print(f"[SUCCESS] User profile updated")
         return True
 
+    def update_user_password(self, user_id: int, password_hash: str) -> bool:
+        """Update user password hash."""
+        try:
+            query = """
+                UPDATE user_profile
+                SET password_hash = ?, updated_at = ?
+                WHERE id = ?
+            """
+            self.execute_write(query, (password_hash, datetime.now(), user_id))
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to update password: {e}")
+            raise
+
+    def update_user_email(self, user_id: int, email: str) -> bool:
+        """Update user email address."""
+        try:
+            query = """
+                UPDATE user_profile
+                SET email = ?, updated_at = ?
+                WHERE id = ?
+            """
+            self.execute_write(query, (email, datetime.now(), user_id))
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to update email: {e}")
+            raise
+
     def log_body_metrics(
         self,
         weight_lbs: float,

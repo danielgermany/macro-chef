@@ -11,9 +11,15 @@ import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 export function Dashboard() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/6ab49e72-b272-4456-a3cc-16544060033b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:12',message:'Dashboard mounted',data:{authUserId:authUser?.id,resolvedUserId:userId,hasAuthUser:!!authUser},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   const { showSuccess, showError } = useToast();
   
   const { data: progress, isLoading: progressLoading } = useDailyProgress(userId);
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/6ab49e72-b272-4456-a3cc-16544060033b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.tsx:17',message:'Daily progress query state',data:{hasProgress:!!progress,isLoading:progressLoading,hasTotals:!!progress?.totals,hasTargets:!!progress?.targets},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
   const { data: user } = useUser(userId);
   const deleteMealMutation = useDeleteMeal(userId);
 

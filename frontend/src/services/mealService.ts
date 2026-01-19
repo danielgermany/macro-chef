@@ -8,9 +8,19 @@ export const mealService = {
   },
 
   async getDailyProgress(userId: number, date?: string): Promise<DailyProgress> {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ab49e72-b272-4456-a3cc-16544060033b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'mealService.ts:10',message:'getDailyProgress called',data:{userId,date},"timestamp":Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     const params = new URLSearchParams({ user_id: String(userId) });
     if (date) params.append('target_date', date);
-    const response = await api.get(`/meals/progress?${params}`);
+    const url = `/meals/progress?${params.toString()}`;
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ab49e72-b272-4456-a3cc-16544060033b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'mealService.ts:14',message:'API request URL',data:{url,userId},"timestamp":Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    const response = await api.get(url);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6ab49e72-b272-4456-a3cc-16544060033b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'mealService.ts:16',message:'getDailyProgress response',data:{hasData:!!response.data,hasTotals:!!response.data?.totals,status:response.status},"timestamp":Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     return response.data;
   },
 

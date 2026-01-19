@@ -1,15 +1,13 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nutritionService } from '../services/nutritionService';
 import { mealService } from '../services/mealService';
 import { useUser } from '../hooks/useUser';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { exportNutritionSummary } from '../utils/export';
 import { MacroDistributionChart } from '../components/nutrition/MacroDistributionChart';
 import { NutritionTrendChart } from '../components/nutrition/NutritionTrendChart';
 import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
-import { Target, TrendingUp, Download } from 'lucide-react';
+import { Target, TrendingUp } from 'lucide-react';
 
 export function Nutrition() {
   const { user: authUser } = useAuth();
@@ -74,7 +72,7 @@ export function Nutrition() {
         </button>
       </div>
 
-      {targets ? (
+      {targets && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Daily Targets */}
           <div className="bg-white rounded-xl shadow-sm p-6">
@@ -136,7 +134,7 @@ export function Nutrition() {
             )}
           </div>
         </div>
-      ) : null}
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -148,7 +146,7 @@ export function Nutrition() {
         <NutritionTrendChart userId={userId} days={7} />
       </div>
 
-      {!targets ? (
+      {!targets && (
         <div className="bg-white rounded-xl shadow-sm p-6 text-center py-12">
           <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">No Targets Generated</h2>

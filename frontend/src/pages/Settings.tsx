@@ -4,14 +4,12 @@ import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../hooks/useUser';
 import { useToast } from '../contexts/ToastContext';
-import { exportBodyMetrics } from '../utils/export';
-import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus, Download, Lock, Mail } from 'lucide-react';
+import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus, Lock, Mail } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import type { User as UserType, BodyMetrics, ProgressSummary } from '../types/user';
+import type { User as UserType, BodyMetrics } from '../types/user';
 
 const GOAL_TYPES = ['bulk', 'cut', 'maintain', 'recomp'] as const;
 const ACTIVITY_LEVELS = ['sedentary', 'light', 'moderate', 'very_active', 'athlete'] as const;
-const COOKING_SKILLS = ['beginner', 'intermediate', 'advanced'] as const;
 const COMMON_EQUIPMENT = ['oven', 'stovetop', 'microwave', 'air_fryer', 'slow_cooker', 'blender', 'food_processor'];
 
 export function Settings() {
@@ -350,31 +348,31 @@ export function Settings() {
                     <h3 className="font-semibold text-blue-900">Progress Summary (Last 30 Days)</h3>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    {progressSummary.weight_change_lbs !== null && (
+                    {progressSummary.weight_change_lbs !== null && progressSummary.weight_change_lbs !== undefined && (
                       <div>
                         <div className="text-blue-600 font-medium">Weight Change</div>
                         <div className="text-lg font-bold">
                           {progressSummary.weight_change_lbs > 0 ? '+' : ''}
-                          {progressSummary.weight_change_lbs?.toFixed(1)} lbs
+                          {progressSummary.weight_change_lbs.toFixed(1)} lbs
                         </div>
                       </div>
                     )}
-                    {progressSummary.muscle_change_lbs !== null && (
+                    {progressSummary.muscle_change_lbs !== null && progressSummary.muscle_change_lbs !== undefined && (
                       <div>
                         <div className="text-blue-600 font-medium">Muscle Change</div>
                         <div className="text-lg font-bold">
                           {progressSummary.muscle_change_lbs > 0 ? '+' : ''}
-                          {progressSummary.muscle_change_lbs?.toFixed(1)} lbs
+                          {progressSummary.muscle_change_lbs.toFixed(1)} lbs
                         </div>
                       </div>
                     )}
-                    {progressSummary.current_weight !== null && (
+                    {progressSummary.current_weight !== null && progressSummary.current_weight !== undefined && (
                       <div>
                         <div className="text-blue-600 font-medium">Current Weight</div>
                         <div className="text-lg font-bold">{progressSummary.current_weight.toFixed(1)} lbs</div>
                       </div>
                     )}
-                    {progressSummary.current_bodyfat !== null && (
+                    {progressSummary.current_bodyfat !== null && progressSummary.current_bodyfat !== undefined && (
                       <div>
                         <div className="text-blue-600 font-medium">Body Fat %</div>
                         <div className="text-lg font-bold">{progressSummary.current_bodyfat.toFixed(1)}%</div>

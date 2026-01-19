@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { budgetService, type BudgetSummary, type SpendingTrend, type CategoryBreakdown } from '../services/budgetService';
+import { budgetService } from '../services/budgetService';
 
 export function useBudget(userId: number) {
   const weeklySummary = useQuery({

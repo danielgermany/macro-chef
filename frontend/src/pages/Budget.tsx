@@ -5,8 +5,6 @@ import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Calendar, PieChart } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
-  BarChart,
-  Bar,
   LineChart,
   Line,
   PieChart as RechartsPieChart,
@@ -234,7 +232,7 @@ export function Budget() {
                 <XAxis dataKey="week" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value: number) => `$${value.toFixed(2)}`}
+                  formatter={(value: number | undefined) => value !== undefined ? `$${value.toFixed(2)}` : '$0.00'}
                   labelStyle={{ color: '#374151' }}
                 />
                 <Legend />
@@ -308,16 +306,16 @@ export function Budget() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    label={(props: { name?: string; percent?: number }) => `${props.name || 'Unknown'}: ${(props.percent || 0).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {categoryChartData.map((entry, index) => (
+                    {categoryChartData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value: number | undefined) => value !== undefined ? `$${value.toFixed(2)}` : '$0.00'} />
                 </RechartsPieChart>
               </ResponsiveContainer>
               <div className="mt-4 space-y-2">

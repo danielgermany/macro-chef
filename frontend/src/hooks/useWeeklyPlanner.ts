@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { planService, type WeeklyPlan, type SavedPlan } from '../services/planService';
+import { planService, type WeeklyPlan } from '../services/planService';
 
 export function useWeeklyPlanner(userId: number) {
   const queryClient = useQueryClient();

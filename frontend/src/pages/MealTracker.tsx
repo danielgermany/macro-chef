@@ -5,12 +5,10 @@ import { useToast } from '../contexts/ToastContext';
 import { RecipeSearch } from '../components/recipes/RecipeSearch';
 import { MealHistory } from '../components/meals/MealHistory';
 import { FormField } from '../components/forms/FormField';
-import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
-import { exportMealLogs } from '../utils/export';
-import { mealService } from '../services/mealService';
 import { Plus, Search, History, Download } from 'lucide-react';
+import { mealService } from '../services/mealService';
+import { exportMealLogs } from '../utils/export';
 import type { MealTime } from '../types/meal';
-import type { Recipe } from '../services/recipeService';
 
 export function MealTracker() {
   const { user: authUser } = useAuth();

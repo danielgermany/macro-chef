@@ -23,6 +23,7 @@ export interface BodyMetrics {
   id: number;
   user_id: number;
   date: string;
+  measurement_date?: string;
   weight_lbs: number;
   body_fat_pct?: number;
   muscle_mass_lbs?: number;

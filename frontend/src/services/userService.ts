@@ -32,16 +32,17 @@ export const userService = {
     return response.data;
   },
 
-  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
-    const response = await api.post('/auth/change-password', {
+  async changePassword(currentPassword: string, newPassword: string, confirmPassword: string): Promise<{ message: string }> {
+    const response = await api.patch('/auth/change-password', {
       current_password: currentPassword,
       new_password: newPassword,
+      confirm_password: confirmPassword,
     });
     return response.data;
   },
 
-  async changeEmail(newEmail: string, password: string): Promise<{ message: string; new_email: string }> {
-    const response = await api.post('/auth/change-email', {
+  async changeEmail(newEmail: string, password: string): Promise<{ message: string }> {
+    const response = await api.patch('/auth/change-email', {
       new_email: newEmail,
       password: password,
     });

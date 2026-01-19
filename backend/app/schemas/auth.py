@@ -30,6 +30,7 @@ class UserRegisterResponse(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=8, description="New password must be at least 8 characters")
+    confirm_password: str = Field(..., min_length=8, description="Password confirmation must match new password")
 
 class EmailChange(BaseModel):
     new_email: EmailStr

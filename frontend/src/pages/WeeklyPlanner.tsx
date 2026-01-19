@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { useWeeklyPlanner } from '../hooks/useWeeklyPlanner';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { Calendar, ShoppingCart, Save, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, parseISO } from 'date-fns';
-import type { WeeklyPlan, DailyPlan, MealPlan } from '../services/planService';
+import type { DailyPlan, MealPlan } from '../services/planService';
 
 const MEAL_TIMES: Array<'breakfast' | 'lunch' | 'dinner' | 'snack'> = [
   'breakfast',
@@ -19,16 +18,14 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 export function WeeklyPlanner() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showSuccess, showError } = useToast();
   const {
-    generatePlan,
     generatePlanAsync,
     isGenerating,
     generatedPlan,
     savePlan,
     isSaving,
     savedPlans,
-    isLoadingPlans,
     shoppingListQuery,
   } = useWeeklyPlanner(userId);
 

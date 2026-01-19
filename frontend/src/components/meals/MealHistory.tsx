@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { mealService } from '../../services/mealService';
-import { Search, Calendar, Filter, X } from 'lucide-react';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
-import type { MealLog } from '../../services/mealService';
+import { Search, Filter, X } from 'lucide-react';
+import { format } from 'date-fns';
+import type { MealLog } from '../../types/meal';
 
 interface MealHistoryProps {
   userId: number;
@@ -40,7 +40,7 @@ export function MealHistory({ userId }: MealHistoryProps) {
 
   // Group meals by date
   const mealsByDate = meals?.reduce((acc: Record<string, MealLog[]>, meal) => {
-    const date = meal.meal_date;
+    const date = meal.date;
     if (!acc[date]) {
       acc[date] = [];
     }

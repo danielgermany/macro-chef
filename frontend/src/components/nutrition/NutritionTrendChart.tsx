@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { format, subDays, parseISO } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { Skeleton } from '../ui/Skeleton';
 
 interface NutritionTrendChartProps {
@@ -95,10 +95,12 @@ export function NutritionTrendChart({ userId, days = 7 }: NutritionTrendChartPro
             label={{ value: 'Macros (g)', angle: 90, position: 'insideRight' }}
           />
           <Tooltip
-            formatter={(value: number, name: string) => {
-              if (name.includes('Target')) return [`${value.toFixed(0)}`, name];
-              if (name === 'calories' || name === 'caloriesTarget') return [`${value.toFixed(0)} kcal`, name];
-              return [`${value.toFixed(1)}g`, name];
+            formatter={(value: number | undefined, name: string | undefined) => {
+              const nameStr = name || 'Unknown';
+              if (value === undefined) return ['N/A', nameStr] as [string, string];
+              if (nameStr.includes('Target')) return [`${value.toFixed(0)}`, nameStr] as [string, string];
+              if (nameStr === 'calories' || nameStr === 'caloriesTarget') return [`${value.toFixed(0)} kcal`, nameStr] as [string, string];
+              return [`${value.toFixed(1)}g`, nameStr] as [string, string];
             }}
             labelStyle={{ color: '#374151' }}
           />

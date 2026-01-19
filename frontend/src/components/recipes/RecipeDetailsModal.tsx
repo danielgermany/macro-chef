@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { recipeService } from '../../services/recipeService';
-import { X, Clock, Users, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Clock, Users, ExternalLink } from 'lucide-react';
 
 interface RecipeDetailsModalProps {
   recipeId: number;
@@ -49,8 +49,8 @@ export function RecipeDetailsModal({ recipeId, onClose }: RecipeDetailsModalProp
     );
   }
 
-  const nutrition = recipe.nutrition || {};
-  const nutrients = nutrition.nutrients || [];
+  const nutrition = recipe.nutrition;
+  const nutrients = nutrition?.nutrients || [];
   const nutrientsMap: Record<string, { amount: number; unit: string }> = {};
   nutrients.forEach((n: any) => {
     nutrientsMap[n.name.toLowerCase()] = { amount: n.amount, unit: n.unit || '' };

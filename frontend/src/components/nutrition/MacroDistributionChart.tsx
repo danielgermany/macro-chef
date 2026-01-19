@@ -43,16 +43,16 @@ export function MacroDistributionChart({ protein, carbs, fat }: MacroDistributio
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percentage }) => `${name} ${percentage}%`}
+                label={(props: { name?: string; percent?: number }) => `${props.name || 'Unknown'} ${(props.percent || 0).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {data.map((entry, index) => (
+                {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => `${value.toFixed(1)}g`} />
+              <Tooltip formatter={(value: number | undefined) => value !== undefined ? `${value.toFixed(1)}g` : 'N/A'} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
