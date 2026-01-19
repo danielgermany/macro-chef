@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../hooks/useUser';
+import { useToast } from '../contexts/ToastContext';
 import { User, Settings as SettingsIcon, Target, TrendingUp, Save, Plus } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import type { User as UserType, BodyMetrics, ProgressSummary } from '../types/user';
@@ -16,6 +17,7 @@ export function Settings() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
   const { data: user, isLoading: isLoadingUser } = useUser(userId);
+  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'metrics' | 'preferences'>('profile');
@@ -26,7 +28,10 @@ export function Settings() {
     mutationFn: (data: Partial<UserType>) => userService.updateUser(userId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', userId] });
-      alert('Profile updated successfully!');
+      showSuccess('Profile updated successfully!');
+    },
+    onError: () => {
+      showError('Failed to update profile');
     },
   });
 
@@ -37,7 +42,10 @@ export function Settings() {
       queryClient.invalidateQueries({ queryKey: ['metrics', userId] });
       queryClient.invalidateQueries({ queryKey: ['progress', userId] });
       setShowMetricsForm(false);
-      alert('Body metrics logged successfully!');
+      showSuccess('Body metrics logged successfully!');
+    },
+    onError: () => {
+      showError('Failed to log body metrics');
     },
   });
 

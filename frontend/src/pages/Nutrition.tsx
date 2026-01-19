@@ -2,12 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nutritionService } from '../services/nutritionService';
 import { useUser } from '../hooks/useUser';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Target, TrendingUp } from 'lucide-react';
 
 export function Nutrition() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
   const { data: user } = useUser(userId);
+  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   
   const { data: targets, isLoading } = useQuery({
@@ -19,11 +21,15 @@ export function Nutrition() {
     mutationFn: () => nutritionService.generateTargets(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nutritionTargets', userId] });
+      showSuccess('Nutrition targets generated successfully');
+    },
+    onError: () => {
+      showError('Failed to generate targets');
     },
   });
 
   const handleGenerateTargets = () => {
-    if (confirm('Generate new targets for today? This will overwrite existing targets.')) {
+    if (window.confirm('Generate new targets for today? This will overwrite existing targets.')) {
       generateTargetsMutation.mutate();
     }
   };

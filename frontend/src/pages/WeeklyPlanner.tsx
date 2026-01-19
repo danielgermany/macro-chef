@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useWeeklyPlanner } from '../hooks/useWeeklyPlanner';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Calendar, ShoppingCart, Save, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, parseISO } from 'date-fns';
 import type { WeeklyPlan, DailyPlan, MealPlan } from '../services/planService';
@@ -17,6 +18,7 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 export function WeeklyPlanner() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
+  const { showSuccess, showError, showWarning } = useToast();
   const {
     generatePlan,
     generatePlanAsync,
@@ -54,18 +56,26 @@ export function WeeklyPlanner() {
         planName: name,
         autoRecommend: true,
       });
+      showSuccess('Weekly plan generated successfully!');
     } catch (error) {
       console.error('Failed to generate plan:', error);
-      alert('Failed to generate plan. Please try again.');
+      showError('Failed to generate plan. Please try again.');
     }
   };
 
   const handleSavePlan = () => {
     if (!generatedPlan) {
-      alert('No plan to save. Please generate a plan first.');
+      showError('No plan to save. Please generate a plan first.');
       return;
     }
-    savePlan(generatedPlan);
+    savePlan(generatedPlan, {
+      onSuccess: () => {
+        showSuccess('Plan saved successfully!');
+      },
+      onError: () => {
+        showError('Failed to save plan');
+      },
+    });
   };
 
   const handleViewShoppingList = (planId: number) => {

@@ -19,6 +19,18 @@ export function useWeeklyPlanner(userId: number) {
     },
   });
 
+  const savePlanWithCallbacks = (plan: WeeklyPlan, callbacks?: { onSuccess?: () => void; onError?: () => void }) => {
+    savePlanMutation.mutate(plan, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['savedPlans', userId] });
+        callbacks?.onSuccess?.();
+      },
+      onError: () => {
+        callbacks?.onError?.();
+      },
+    });
+  };
+
   const savedPlansQuery = useQuery({
     queryKey: ['savedPlans', userId],
     queryFn: () => planService.getPlans(userId),
@@ -43,7 +55,7 @@ export function useWeeklyPlanner(userId: number) {
     generatePlanAsync: generatePlanMutation.mutateAsync,
     isGenerating: generatePlanMutation.isPending,
     generatedPlan: generatePlanMutation.data,
-    savePlan: savePlanMutation.mutate,
+    savePlan: savePlanWithCallbacks,
     isSaving: savePlanMutation.isPending,
     savedPlans: savedPlansQuery.data || [],
     isLoadingPlans: savedPlansQuery.isLoading,

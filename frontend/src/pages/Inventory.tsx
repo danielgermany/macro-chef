@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '../services/inventoryService';
 import type { InventoryItem } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function Inventory() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
+  const { showSuccess, showError } = useToast();
   const queryClient = useQueryClient();
   
   const { data: items, isLoading } = useQuery({
@@ -25,6 +27,10 @@ export function Inventory() {
     mutationFn: (itemId: number) => inventoryService.deleteItem(itemId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory', userId] });
+      showSuccess('Item deleted successfully');
+    },
+    onError: () => {
+      showError('Failed to delete item');
     },
   });
 
@@ -51,6 +57,10 @@ export function Inventory() {
         location: 'pantry',
         expiration_date: '',
       });
+      showSuccess('Item added successfully');
+    },
+    onError: () => {
+      showError('Failed to add item');
     },
   });
 

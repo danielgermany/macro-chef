@@ -1,6 +1,7 @@
 import { useDailyProgress, useDeleteMeal } from '../hooks/useDailyProgress';
 import { useUser } from '../hooks/useUser';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { MacroProgressCard } from '../components/dashboard/MacroProgressCard';
 import { TodaysMeals } from '../components/dashboard/TodaysMeals';
 import { QuickActions } from '../components/dashboard/QuickActions';
@@ -8,14 +9,22 @@ import { QuickActions } from '../components/dashboard/QuickActions';
 export function Dashboard() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
+  const { showSuccess, showError } = useToast();
   
   const { data: progress, isLoading: progressLoading } = useDailyProgress(userId);
   const { data: user } = useUser(userId);
   const deleteMealMutation = useDeleteMeal(userId);
 
   const handleDeleteMeal = (mealId: number) => {
-    if (confirm('Are you sure you want to delete this meal?')) {
-      deleteMealMutation.mutate(mealId);
+    if (window.confirm('Are you sure you want to delete this meal?')) {
+      deleteMealMutation.mutate(mealId, {
+        onSuccess: () => {
+          showSuccess('Meal deleted successfully');
+        },
+        onError: () => {
+          showError('Failed to delete meal');
+        },
+      });
     }
   };
 

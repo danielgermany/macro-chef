@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useDailyProgress, useLogMeal, useMealRecommendations } from '../hooks/useDailyProgress';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { Plus } from 'lucide-react';
 import type { MealTime } from '../types/meal';
 
 export function MealTracker() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
+  const { showSuccess, showError } = useToast();
   const { data: progress } = useDailyProgress(userId);
   const logMealMutation = useLogMeal(userId);
   
@@ -37,6 +39,10 @@ export function MealTracker() {
         setProtein('');
         setCarbs('');
         setFat('');
+        showSuccess('Meal logged successfully!');
+      },
+      onError: () => {
+        showError('Failed to log meal');
       },
     });
   };
