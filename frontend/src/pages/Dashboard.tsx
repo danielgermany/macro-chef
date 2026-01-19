@@ -1,11 +1,13 @@
 import { useDailyProgress, useDeleteMeal } from '../hooks/useDailyProgress';
 import { useUser } from '../hooks/useUser';
+import { useAuth } from '../contexts/AuthContext';
 import { MacroProgressCard } from '../components/dashboard/MacroProgressCard';
 import { TodaysMeals } from '../components/dashboard/TodaysMeals';
 import { QuickActions } from '../components/dashboard/QuickActions';
 
 export function Dashboard() {
-  const userId = 1; // TODO: Get from auth context
+  const { user: authUser } = useAuth();
+  const userId = authUser?.id || 1;
   
   const { data: progress, isLoading: progressLoading } = useDailyProgress(userId);
   const { data: user } = useUser(userId);

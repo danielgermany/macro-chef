@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { nutritionService } from '../services/nutritionService';
 import { useUser } from '../hooks/useUser';
+import { useAuth } from '../contexts/AuthContext';
 import { Target, TrendingUp } from 'lucide-react';
 
 export function Nutrition() {
-  const userId = 1; // TODO: Get from auth context
+  const { user: authUser } = useAuth();
+  const userId = authUser?.id || 1;
   const { data: user } = useUser(userId);
   const queryClient = useQueryClient();
   
