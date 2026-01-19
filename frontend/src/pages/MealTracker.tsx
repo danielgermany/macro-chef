@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { useDailyProgress, useLogMeal, useMealRecommendations } from '../hooks/useDailyProgress';
-import { useUser } from '../hooks/useUser';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { MealTime } from '../types/meal';
 
 export function MealTracker() {
   const { user: authUser } = useAuth();
   const userId = authUser?.id || 1;
   const { data: progress } = useDailyProgress(userId);
-  const { data: user } = useUser(userId);
   const logMealMutation = useLogMeal(userId);
   
   const [showForm, setShowForm] = useState(false);

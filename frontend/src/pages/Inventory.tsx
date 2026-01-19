@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, AlertTriangle, Trash2, Edit2 } from 'lucide-react';
+import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function Inventory() {
