@@ -3,6 +3,7 @@ import { useDailyProgress, useLogMeal, useMealRecommendations } from '../hooks/u
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { RecipeSearch } from '../components/recipes/RecipeSearch';
+import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { Plus, Search } from 'lucide-react';
 import type { MealTime } from '../types/meal';
 import type { Recipe } from '../services/recipeService';

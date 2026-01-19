@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBudget } from '../hooks/useBudget';
 import { useAuth } from '../contexts/AuthContext';
+import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Calendar, PieChart } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
@@ -56,8 +57,20 @@ export function Budget() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-gray-500">Loading budget data...</div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton variant="text" width="30%" height={36} />
+          <Skeleton variant="rectangular" width={200} height={40} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       </div>
     );
   }

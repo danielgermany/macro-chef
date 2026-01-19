@@ -3,6 +3,7 @@ import { nutritionService } from '../services/nutritionService';
 import { useUser } from '../hooks/useUser';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { Target, TrendingUp } from 'lucide-react';
 
 export function Nutrition() {
@@ -36,8 +37,15 @@ export function Nutrition() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-gray-500">Loading...</div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton variant="text" width="30%" height={36} />
+          <Skeleton variant="rectangular" width={180} height={40} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       </div>
     );
   }

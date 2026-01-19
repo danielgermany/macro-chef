@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { userService } from '../../services/userService';
+import { Skeleton } from '../ui/Skeleton';
 import {
   LineChart,
   Line,
@@ -26,10 +27,8 @@ export function WeightChart({ userId, days = 30 }: WeightChartProps) {
   if (isLoading) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">Weight Progress</h2>
-        <div className="h-64 flex items-center justify-center text-gray-500">
-          Loading weight data...
-        </div>
+        <Skeleton variant="text" width="30%" height={28} className="mb-4" />
+        <Skeleton variant="rectangular" width="100%" height={300} />
       </div>
     );
   }

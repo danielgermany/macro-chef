@@ -6,6 +6,7 @@ import { MacroProgressCard } from '../components/dashboard/MacroProgressCard';
 import { TodaysMeals } from '../components/dashboard/TodaysMeals';
 import { QuickActions } from '../components/dashboard/QuickActions';
 import { WeightChart } from '../components/dashboard/WeightChart';
+import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 
 export function Dashboard() {
   const { user: authUser } = useAuth();
@@ -31,8 +32,19 @@ export function Dashboard() {
 
   if (progressLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-gray-500">Loading...</div>
+      <div className="space-y-6">
+        <Skeleton variant="text" width="40%" height={36} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <SkeletonCard />
+          </div>
+          <SkeletonCard />
+        </div>
       </div>
     );
   }

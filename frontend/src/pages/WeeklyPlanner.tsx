@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWeeklyPlanner } from '../hooks/useWeeklyPlanner';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { Skeleton, SkeletonCard } from '../components/ui/Skeleton';
 import { Calendar, ShoppingCart, Save, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, parseISO } from 'date-fns';
 import type { WeeklyPlan, DailyPlan, MealPlan } from '../services/planService';

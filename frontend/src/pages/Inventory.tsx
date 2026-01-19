@@ -4,6 +4,7 @@ import { inventoryService } from '../services/inventoryService';
 import type { InventoryItem } from '../services/inventoryService';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { Skeleton, SkeletonTable } from '../components/ui/Skeleton';
 import { Plus, AlertTriangle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -75,8 +76,12 @@ export function Inventory() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-gray-500">Loading...</div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton variant="text" width="20%" height={36} />
+          <Skeleton variant="rectangular" width={120} height={40} />
+        </div>
+        <SkeletonTable rows={5} />
       </div>
     );
   }
