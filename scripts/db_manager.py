@@ -4,20 +4,41 @@ All other scripts inherit from this class.
 """
 
 import sqlite3
+import os
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 from config.config import DATABASE_PATH
 
+def get_db_path() -> Path:
+    """Get database path from environment or config."""
+    # Check for DATABASE_URL environment variable first (for tests)
+    db_url = os.getenv("DATABASE_URL", "")
+    if db_url and db_url.startswith("sqlite:///"):
+        # Extract path from SQLite URL
+        db_path = db_url.replace("sqlite:///", "")
+        return Path(db_path)
+    
+    # Fall back to config
+    return DATABASE_PATH
+
 class DatabaseManager:
     """Base class for database operations."""
 
-    def __init__(self, db_path: Path = DATABASE_PATH):
-        """Initialize database connection."""
-        self.db_path = db_path
+    def __init__(self, db_path: Optional[Union[Path, str]] = None):
+        """Initialize database connection.
+        
+        Args:
+            db_path: Optional database path. If None, reads from DATABASE_URL
+                    environment variable or falls back to config.
+        """
+        if db_path is None:
+            self.db_path = get_db_path()
+        else:
+            self.db_path = Path(db_path) if isinstance(db_path, str) else db_path
         self.conn = None
 
     def connect(self):
