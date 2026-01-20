@@ -6,7 +6,6 @@ An intelligent meal planning system that helps you maintain nutrition goals, min
 
 - **[Complete Documentation](DOCUMENTATION.md)** - Full documentation with all guides, specs, and details
 - **[Quick Start Guide](DOCUMENTATION.md#quick-start-guide)** - Get started in 5 minutes
-- **[GUI Application Guide](DOCUMENTATION.md#gui-application)** - GUI usage and features
 - **[Web Migration Plan](MIGRATION_PLAN.md)** - FastAPI + React migration details
 - **[Technical Specification](SPECIFICATION.md)** - Complete technical specs
 
@@ -37,12 +36,17 @@ pip install -r requirements.txt
 # Initialize database
 python scripts/db_setup.py
 
-# Create your profile
-python scripts/user_profile.py --create
+# Start backend server
+cd backend
+uvicorn app.main:app --reload --port 8000
 
-# Launch GUI
-python gui_app.py
+# Start frontend (in another terminal)
+cd frontend
+npm install
+npm run dev
 ```
+
+Visit http://localhost:5173 to access the web application.
 
 For detailed setup instructions, see the [Quick Start Guide](DOCUMENTATION.md#quick-start-guide).
 
@@ -51,7 +55,7 @@ For detailed setup instructions, see the [Quick Start Guide](DOCUMENTATION.md#qu
 - **Database**: SQLite (13 tables)
 - **Backend**: Python 3.8+
 - **APIs**: Spoonacular (recipes/nutrition), USDA FoodData Central (nutrition)
-- **Interface**: CLI + GUI (tkinter) + Web (FastAPI + React)
+- **Interface**: CLI + Web (FastAPI + React)
 
 ## Documentation
 
@@ -60,7 +64,6 @@ All documentation has been consolidated into a single file for easy access:
 - **[DOCUMENTATION.md](DOCUMENTATION.md)** - Complete documentation including:
   - Project Overview
   - Quick Start Guide
-  - GUI Application Guide
   - Technical Specification
   - Web Migration Plan
   - Testing Guide
@@ -76,7 +79,6 @@ For detailed technical information:
 
 ### Completed
 - Core functionality (nutrition tracking, meal recommendations, inventory)
-- GUI application (tkinter)
 - Online recipe integration
 - Web backend (FastAPI) - Phase 1-2 complete
 - Web frontend (React) - Phase 3-4 complete

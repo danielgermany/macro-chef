@@ -9,14 +9,13 @@
 
 1. [Project Overview](#project-overview)
 2. [Quick Start Guide](#quick-start-guide)
-3. [GUI Application](#gui-application)
-4. [Technical Specification](#technical-specification)
-5. [Web Migration Plan](#web-migration-plan)
-6. [Testing](#testing)
-7. [Implementation Details](#implementation-details)
-8. [Features & Integrations](#features--integrations)
-9. [Backend API Setup](#backend-api-setup)
-10. [Frontend Setup](#frontend-setup)
+3. [Technical Specification](#technical-specification)
+4. [Web Migration Plan](#web-migration-plan)
+5. [Testing](#testing)
+6. [Implementation Details](#implementation-details)
+7. [Features & Integrations](#features--integrations)
+8. [Backend API Setup](#backend-api-setup)
+9. [Frontend Setup](#frontend-setup)
 
 ---
 
@@ -52,8 +51,7 @@ Macro Chef is an intelligent meal planning system that helps you maintain nutrit
 - **Database**: SQLite (13 tables)
 - **Backend**: Python 3.8+
 - **APIs**: Spoonacular (recipes/nutrition), USDA FoodData Central (nutrition)
-- **Interface**: Unified CLI with natural language support + GUI application (tkinter)
-- **Web (New)**: FastAPI backend + React frontend (see [Web Migration Plan](#web-migration-plan))
+- **Interface**: Unified CLI with natural language support + Web (FastAPI + React)
 
 ### Key Principles
 
@@ -319,155 +317,6 @@ Tracks 9 key micronutrients:
 
 ---
 
-## GUI Application
-
-### Quick Start (5-Minute Setup)
-
-#### Step 1: Launch the GUI
-```bash
-# macOS/Linux
-./launch_gui.sh
-
-# Windows
-launch_gui.bat
-
-# Or directly:
-python3 gui_app.py
-```
-
-#### Step 2: Create Your Profile
-1. Click the **"Profile"** tab
-2. Fill in your information (name, age, sex, height, weight, body fat %, goal, activity, training days, budget)
-3. Click **"Save Profile"**
-4. Click **"Generate Targets"**
-
-You now have personalized daily nutrition targets!
-
-#### Step 3: View Your Dashboard
-1. Click the **"Dashboard"** tab
-2. See your daily targets:
-   - Total calories
-   - Protein, carbs, fat, fiber
-   - Quick stats
-
-#### Step 4: Search Some Recipes
-1. Click the **"Search Recipes"** tab
-2. Type what you want (e.g., "chicken breast")
-3. Adjust filters if needed (Max Calories, Min Protein, Max Prep Time)
-4. Click **"Search"**
-
-Browse results and save favorites!
-
-### GUI Features
-
-#### Dashboard Tab
-- View daily nutrition targets (calories, protein, carbs, fat, fiber)
-- Quick stats overview (meal count, inventory, goals)
-- One-click refresh
-
-#### Profile Tab
-- Create and edit user profiles
-- Set personal metrics (age, sex, height, weight, body fat %)
-- Configure fitness goals (bulk, cut, maintain, recomp)
-- Set activity level and training frequency
-- Weekly budget tracking
-- Generate daily nutrition targets
-
-#### Meals Tab
-- Browse saved meal templates
-- View nutrition information (calories, macros)
-- Get AI-powered meal recommendations based on your targets
-- Filter by meal type
-
-#### Inventory Tab
-- Track food inventory
-- Add items with quantity, category, and location
-- Monitor expiration dates
-- Search and filter items
-
-#### Search Recipes Tab
-- Search 570,000+ online recipes via Spoonacular API
-- Filter by calories, protein, and prep time
-- USDA nutrition validation
-- See detailed nutrition breakdown
-- Save recipes to your meal library
-
-### Common Tasks
-
-#### Add Food to Inventory
-1. Go to **"Inventory"** tab
-2. Fill in the form (Item Name, Quantity, Unit, Category, Location, Days Until Expiry)
-3. Click **"Add Item"**
-
-#### Get Meal Recommendation
-1. Make sure you have:
-   - Profile created
-   - Targets generated
-   - Some meals in database
-2. Go to **"Meals"** tab
-3. Click **"Get Recommendation"**
-4. See personalized suggestion!
-
-#### Update Your Weight
-1. Go to **"Profile"** tab
-2. Update weight value
-3. Click **"Save Profile"**
-4. Click **"Generate Targets"** to recalculate
-
-### Understanding Your Targets
-
-**Bulk** (Muscle gain):
-- Calories: TDEE + 300
-- Protein: 1.0g per lb bodyweight
-- Focus: Gradual weight gain
-
-**Cut** (Fat loss):
-- Calories: TDEE - 500
-- Protein: 1.2g per lb (preserve muscle)
-- Focus: Sustainable deficit
-
-**Maintain** (Maintenance):
-- Calories: TDEE (no change)
-- Protein: 0.8g per lb
-- Focus: Consistency
-
-**Recomp** (Body recomposition):
-- Calories: TDEE (maintenance)
-- Protein: 1.1g per lb (elevated)
-- Focus: Build muscle, lose fat simultaneously
-
-### Troubleshooting
-
-**"No user profile loaded"**
-→ Go to Profile tab, fill information, click Save
-
-**"Please generate targets first"**
-→ Go to Profile tab, click "Generate Targets"
-
-**"No suitable meals found"**
-→ Search recipes to add meals to database
-
-**Search returns no results**
-→ Check:
-- Internet connection
-- API keys in .env file
-- Filters aren't too restrictive
-- API quota not exceeded (150 free/day)
-
-**GUI looks weird**
-→ Update to latest tkinter or try different Python version
-
-**Can't add inventory**
-→ Ensure database initialized: `python3 scripts/db_setup.py`
-
-### Keyboard Shortcuts
-
-- **Tab**: Navigate between fields
-- **Enter**: Submit forms
-- **Refresh buttons**: Update data without restarting
-
----
-
 ## Technical Specification
 
 ### System Architecture
@@ -535,8 +384,7 @@ macro-chef/
 └── tests/
     ├── test_database.py
     ├── test_nutrition.py
-    ├── test_api.py
-    └── test_gui.py
+    └── test_api.py
 ```
 
 ### Database Schema
@@ -584,7 +432,7 @@ See [SPECIFICATION.md](SPECIFICATION.md) for complete schema details with SQL de
 
 ### Executive Summary
 
-This document outlines a phased migration strategy to transform Macro Chef from a Tkinter desktop application to a modern web application using FastAPI (backend) and React (frontend). The migration preserves existing business logic while adding scalability, multi-user support, and a responsive UI.
+This document outlines the architecture and implementation of Macro Chef as a modern web application using FastAPI (backend) and React (frontend). The application preserves existing business logic while providing scalability, multi-user support, and a responsive UI.
 
 **Estimated Timeline:** 4-6 weeks (part-time) or 2-3 weeks (full-time)
 
@@ -595,27 +443,7 @@ This document outlines a phased migration strategy to transform Macro Chef from 
 
 ### Architecture Overview
 
-#### Current Architecture (Tkinter)
-```
-┌─────────────────────────────────────────────────────┐
-│                   gui_app.py                        │
-│              (Tkinter GUI Layer)                    │
-└──────────────────────┬──────────────────────────────┘
-                       │ Direct Python calls
-┌──────────────────────▼──────────────────────────────┐
-│                  scripts/                            │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐   │
-│  │UserProfile  │ │MealTracker  │ │Inventory    │   │
-│  │Manager      │ │             │ │Manager      │   │
-│  └─────────────┘ └─────────────┘ └─────────────┘   │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│            SQLite Database (local)                    │
-└──────────────────────────────────────────────────────┘
-```
-
-#### New Architecture (Web)
+#### Architecture (Web)
 ```
 ┌─────────────────────────────────────────────────────┐
 │              React Frontend (Browser)               │
@@ -834,15 +662,15 @@ pytest tests/ --cov=app --cov-report=html
 
 ### Search Online Recipes Format Transformation
 
-**Problem:** The `_search_online_recipes` method in `MealRecommender` returns meals in meal template format, but the GUI expects Spoonacular API format.
+**Problem:** The `_search_online_recipes` method in `MealRecommender` returns meals in meal template format, but the web frontend expects Spoonacular API format.
 
-**Solution:** Added format transformation in `scripts/meal_recommender.py` to convert meal template format to API-like format for GUI compatibility.
+**Solution:** Added format transformation in `scripts/meal_recommender.py` to convert meal template format to API-like format for web frontend compatibility.
 
 **Location:** `scripts/meal_recommender.py` - `_search_online_recipes` method
 
 ### Public `search_online_recipes` Method
 
-**Problem:** The `MealRecommender` class had a private `_search_online_recipes` method but no public method for the GUI to call directly.
+**Problem:** The `MealRecommender` class had a private `_search_online_recipes` method but no public method for the web frontend to call directly.
 
 **Solution:** Added public wrapper method `search_online_recipes` in `scripts/meal_recommender.py`.
 
