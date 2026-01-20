@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   UtensilsCrossed,
+  Search,
   Apple,
   Package,
   Calendar,
@@ -12,6 +13,7 @@ import {
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/meals', icon: UtensilsCrossed, label: 'Meal Tracker' },
+  { path: '/recipes', icon: Search, label: 'Recipes' },
   { path: '/nutrition', icon: Apple, label: 'Nutrition' },
   { path: '/inventory', icon: Package, label: 'Inventory' },
   { path: '/planner', icon: Calendar, label: 'Weekly Planner' },

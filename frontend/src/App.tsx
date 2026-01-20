@@ -8,6 +8,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { MealTracker } from './pages/MealTracker';
+import { Recipes } from './pages/Recipes';
 import { Nutrition } from './pages/Nutrition';
 import { Inventory } from './pages/Inventory';
 import { WeeklyPlanner } from './pages/WeeklyPlanner';
@@ -39,6 +40,7 @@ function App() {
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="meals" element={<MealTracker />} />
+                <Route path="recipes" element={<Recipes />} />
                 <Route path="nutrition" element={<Nutrition />} />
                 <Route path="inventory" element={<Inventory />} />
                 <Route path="planner" element={<WeeklyPlanner />} />
