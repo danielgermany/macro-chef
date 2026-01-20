@@ -827,84 +827,6 @@ pytest tests/ --cov=app --cov-report=html
 - Meal tests verify logging, progress tracking, and history
 - User tests verify profile management and body metrics
 
-### Legacy GUI Testing (Deprecated)
-
-The following test files are for the legacy Tkinter GUI application and are no longer maintained:
-
-### Running Tests
-
-#### Run All Tests
-```bash
-pytest tests/ -v
-```
-
-#### Run Specific Test File
-```bash
-pytest tests/test_database.py -v
-pytest tests/test_nutrition.py -v
-pytest tests/test_api.py -v
-pytest tests/test_gui.py -v
-```
-
-#### Run with Coverage Report
-```bash
-pytest tests/ --cov=scripts --cov-report=html
-```
-
-Then open `htmlcov/index.html` in your browser to see detailed coverage.
-
-#### Run Tests in Parallel (faster)
-```bash
-pip install pytest-xdist
-pytest tests/ -v -n auto
-```
-
-### Test Configuration
-
-#### Mock Tests vs Live Tests
-
-By default, API tests use mocked responses and don't require API keys. To run live API tests:
-
-1. Set up your `.env` file with API keys:
-```bash
-SPOONACULAR_API_KEY=your_key_here
-USDA_API_KEY=your_key_here  # Optional
-```
-
-2. Run tests with live API enabled:
-```bash
-pytest tests/test_api.py -v
-```
-
-Live tests are automatically skipped if API keys are not configured.
-
-#### Temporary Test Database
-
-All tests use temporary SQLite databases that are:
-- Created fresh for each test
-- Isolated from your production database
-- Automatically deleted after tests complete
-
-Your actual `database/meal_planner.db` is never touched during testing.
-
-### GUI Test Summary
-
-**Overall: 11/23 tests passing (48%)**
-
-The passing tests validate core functionality:
-- Button callback existence
-- Form validation
-- Error handling
-- Warning messages for missing inputs
-- Status bar updates
-
-**Test Categories:**
-1. Profile Tab Buttons (3/6 passing)
-2. Dashboard Tab Buttons (1/2 passing)
-3. Meals Tab Buttons (2/4 passing)
-4. Inventory Tab Buttons (1/3 passing)
-5. Search Recipes Tab Buttons (1/4 passing)
-6. General Button Tests (3/4 passing)
 
 ---
 
@@ -944,9 +866,7 @@ The passing tests validate core functionality:
 
 **Problem:** Test cases were duplicating SQL INSERT statements for creating test users.
 
-**Solution:** Created reusable helper function `create_test_user` in `tests/test_gui.py`.
-
-**Location:** `tests/test_gui.py` - `create_test_user` function
+**Solution:** Created reusable helper function `create_test_user` in test fixtures.
 
 ---
 
