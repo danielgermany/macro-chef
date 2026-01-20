@@ -724,47 +724,112 @@ See `MIGRATION_PLAN.md` for complete API endpoint documentation.
 
 ## Testing
 
-### Test Suite Overview
+### Web Application Testing
 
-Comprehensive unit tests for the meal planning system covering database operations, nutrition calculations, API integrations, and GUI functionality.
+#### Quick Start Testing
 
-### Test Files
+**Prerequisites:**
+1. Backend server running on http://localhost:8000
+2. Frontend server running on http://localhost:5173
+3. Database initialized (automatic on first run)
 
-#### `test_database.py`
-Tests database initialization and operations:
-- Database schema creation (13 tables)
-- CRUD operations for user profiles and inventory
-- Foreign key constraints and cascading deletes
-- Data integrity and uniqueness constraints
-- Index creation for performance
+**Quick Test Checklist (15 minutes):**
 
-#### `test_nutrition.py`
-Tests nutrition calculation logic:
-- BMR calculations (Katch-McArdle and Mifflin-St Jeor formulas)
-- TDEE calculations for different activity levels
-- Macro target calculations for bulk/cut/maintain/recomp
-- Training day adjustments
-- Micronutrient RDA calculations (male/female/athlete)
-- Validation of calculation edge cases
+1. **Authentication (2 min)**
+   - Register new user at /register
+   - Login with credentials
+   - Verify redirect to dashboard
+   - Check user name in header
 
-#### `test_api.py`
-Tests API integrations and caching:
-- Spoonacular API recipe search and nutrition lookup
-- USDA FoodData Central integration
-- API error handling (timeouts, quota exceeded, invalid keys)
-- Retry logic for failed requests
-- Nutrition data caching in database
-- Mock tests (run without API keys)
-- Live tests (only run when API keys configured)
+2. **Dashboard (1 min)**
+   - View macro progress cards (0/0 initially)
+   - View empty meals list
+   - View weight chart (empty if no metrics)
 
-#### `test_gui.py`
-Tests GUI functionality:
-- Button callbacks and form validation
-- User profile management
-- Dashboard display
-- Meal recommendations
-- Inventory management
-- Recipe search
+3. **Nutrition Setup (2 min)**
+   - Navigate to Nutrition page
+   - Generate targets
+   - Verify targets displayed
+   - Check macro distribution chart
+   - Check nutrition trend chart
+
+4. **Meal Logging (3 min)**
+   - Navigate to Meal Tracker
+   - Log a manual meal (chicken, 250 cal, 50g protein)
+   - Verify meal appears in today's list
+   - Check dashboard updates
+   - Search for online recipe
+   - Add recipe to meal log
+   - View recipe details
+
+5. **Meal History (2 min)**
+   - Click History button
+   - Verify meals displayed
+   - Test search filter
+   - Test date range filter
+   - Export to CSV
+
+6. **Inventory (2 min)**
+   - Navigate to Inventory
+   - Add an item
+   - Verify item appears
+   - Check expiring items alert (if applicable)
+   - Export to CSV
+
+7. **Weekly Planner (2 min)**
+   - Navigate to Weekly Planner
+   - Generate a weekly plan
+   - Verify plan displayed
+   - Check daily meals
+   - View shopping list
+   - Save plan
+
+8. **Budget (1 min)**
+   - Navigate to Budget
+   - View weekly summary
+   - Toggle to monthly
+   - Check spending trends chart
+   - Check category breakdown
+
+9. **Settings (2 min)**
+   - Navigate to Settings
+   - Update profile info
+   - Log body metrics
+   - View metrics history
+   - Change password (Security tab)
+   - Change email (Security tab)
+   - Export body metrics CSV
+
+#### Backend API Testing
+
+**Test Files:**
+- `backend/tests/test_auth.py` - Authentication endpoints
+- `backend/tests/test_meals.py` - Meal logging and tracking
+- `backend/tests/test_users.py` - User management
+
+**Running Tests:**
+
+```bash
+# Run all backend tests
+cd backend
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_auth.py -v
+
+# Run with coverage
+pytest tests/ --cov=app --cov-report=html
+```
+
+**Test Configuration:**
+- Tests use temporary SQLite databases
+- Authentication tests verify JWT token creation and validation
+- Meal tests verify logging, progress tracking, and history
+- User tests verify profile management and body metrics
+
+### Legacy GUI Testing (Deprecated)
+
+The following test files are for the legacy Tkinter GUI application and are no longer maintained:
 
 ### Running Tests
 
@@ -1155,8 +1220,8 @@ This is a personal project, but suggestions and feedback are welcome! Feel free 
 
 ---
 
-**For the most up-to-date information, see the individual files:**
+**For the most up-to-date information, see:**
 - `README.md` - Main project documentation
 - `SPECIFICATION.md` - Complete technical specification
 - `MIGRATION_PLAN.md` - Web migration details
-- `ONLINE_RECIPE_FEATURE.md` - Online recipe feature details
+- `DEPLOYMENT.md` - Deployment instructions
