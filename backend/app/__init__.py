@@ -1,3 +1,0 @@
-"""
-Macro Chef FastAPI Backend
-"""

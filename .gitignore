@@ -1,79 +1,12 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
+node_modules/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
-venv/
-env/
-ENV/
-.venv
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Environment variables
+*.local
 .env
-
-# Database
-database/*.db
-database/*.db-journal
-database/backups/*.db
-
-# Logs
-*.log
-
-# OS
+.env.*
+!.env.example
 .DS_Store
-Thumbs.db
-
-# Cache
-data/nutrition_cache.json
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-*test_results.txt
-coverage.xml
-backend/coverage.xml
-backend/htmlcov/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Documentation
-# Generated documentation (keep source .md files)
-docs/_build/
-docs/build/
-site/
-*.pdf   # Generated PDF docs
-# Generated HTML docs (but keep frontend/index.html)
-*.html
-!frontend/index.html
-# Keep source documentation files:
-# !README.md
-# !DOCUMENTATION.md
-# !MIGRATION_PLAN.md
-# !SPECIFICATION.md
+*.log
+coverage/
+.turbo/
+.idea/
+.vscode/

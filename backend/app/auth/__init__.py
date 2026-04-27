@@ -1,3 +1,0 @@
-"""
-Authentication module for JWT-based authentication.
-"""
