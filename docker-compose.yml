@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: macro_chef
+      POSTGRES_PASSWORD: macro_chef
+      POSTGRES_DB: macro_chef
+    ports:
+      - '5432:5432'
+    volumes:
+      - macro-chef-pg:/var/lib/postgresql/data
+
+volumes:
+  macro-chef-pg:

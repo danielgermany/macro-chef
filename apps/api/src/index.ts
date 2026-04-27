@@ -1,15 +1,11 @@
+import 'dotenv/config';
+
 import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
+import { loadEnv } from './lib/env.js';
+import { createApp } from './app.js';
 
-const app = new Hono();
-
-app.get('/', (c) =>
-  c.json({ message: 'Macro Chef API', docs: 'OpenAPI TBD', health: '/health' })
-);
-
-app.get('/health', (c) =>
-  c.json({ status: 'healthy', service: '@macro-chef/api' })
-);
+const env = loadEnv();
+const app = createApp(env);
 
 const port = Number(process.env.PORT) || 3000;
 

@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String?  @map("display_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  meals MealLog[]
+
+  @@map("users")
+}
+
+/// A meal the user logged as eaten (scoped by userId).
+model MealLog {
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eatenAt  DateTime @default(now()) @map("eaten_at")
+  /// Calendar date (UTC) for listing by day.
+  mealDate DateTime @db.Date @map("meal_date")
+  name     String
+  calories Int?
+  proteinG Float?   @map("protein_g")
+  carbsG   Float?   @map("carbs_g")
+  fatG     Float?   @map("fat_g")
+
+  @@index([userId, mealDate])
+  @@map("meal_logs")
+}

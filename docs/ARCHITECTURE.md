@@ -12,21 +12,21 @@ packages/domain →  Shared logic (no I/O): formulas, validation helpers
 
 Target deployment shape (later): static hosting for `web`, Node process for `api`, managed **PostgreSQL** for persistence. Multi-user data must be scoped by authenticated **user id** on every domain query.
 
-## Happy path (placeholder)
+## Happy path (MVP)
 
-Until auth and DB land, the simplest trace is:
+1. Browser loads the SPA from `apps/web` (Vite dev server, typically `http://localhost:5173`).
+2. User registers or logs in; **API** (`apps/api`, Hono) hashes the password, persists **`User`** in **PostgreSQL** via Prisma, and returns a **JWT access token** (`accessToken` in JSON).
+3. The SPA stores the token (see `apps/web/src/lib/api.ts`) and sends **`Authorization: Bearer …`** on protected requests (`GET /api/auth/me`, `/api/meals`).
+4. **Auth middleware** verifies the JWT and attaches **`userId`** to the request context.
+5. Meal handlers read/write **`MealLog`** rows **only** for `context.userId` — e.g. `WHERE userId = …` — never trusting a client-supplied user id.
 
-1. Browser loads the SPA from `apps/web`.
-2. SPA calls `GET http://localhost:3000/health` on the API (configure `VITE_API_URL` when introduced).
-3. API responds with JSON from `apps/api` without persistence.
-
-Expand this section after register/login and Postgres exist: **cookie or JWT → middleware → handler → `WHERE user_id = …`**.
+Timezone note: **`eatenAt`** is UTC; **`mealDate`** is the UTC calendar date used for list-by-day queries (see [MVP.md](MVP.md)).
 
 ## Packages
 
 | Package | Responsibility |
 |---------|----------------|
-| `@macro-chef/web` | UI, routing, TanStack Query (to be wired) |
+| `@macro-chef/web` | UI, routing, TanStack Query |
 | `@macro-chef/api` | Routes, validation (Zod later), calls DB + external APIs |
 | `@macro-chef/domain` | Pure functions: nutrition math, recommendation helpers — **no** `fetch`, no DB |
 

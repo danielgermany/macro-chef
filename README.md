@@ -1,6 +1,6 @@
 # Macro Chef
 
-Monorepo for the rebuilt Macro Chef app. Product scope lives in [docs/FEATURE_INVENTORY.md](docs/FEATURE_INVENTORY.md). Architecture notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Monorepo for the rebuilt Macro Chef app. Product scope lives in [docs/FEATURE_INVENTORY.md](docs/FEATURE_INVENTORY.md). Architecture notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). MVP v1 (users, JWT auth, meal logging): [docs/MVP.md](docs/MVP.md).
 
 ## Structure
 
@@ -18,7 +18,12 @@ Monorepo for the rebuilt Macro Chef app. Product scope lives in [docs/FEATURE_IN
 
 ```bash
 npm install
+cp .env.example .env   # set DATABASE_URL, JWT_SECRET (≥32 chars), PORT if needed
+docker compose up -d    # optional: local PostgreSQL (see docker-compose.yml)
+cd apps/api && npx prisma migrate deploy && cd ../..
 ```
+
+The API reads env from the repo root or `apps/api/.env`. For the web app, set `VITE_API_URL` (e.g. `http://localhost:3000`) if not using the default in code.
 
 ## Development
 
